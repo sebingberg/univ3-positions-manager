@@ -29,15 +29,15 @@
 import { config } from 'dotenv';
 config();
 
+import { Token } from '@uniswap/sdk-core';
+import { Pool } from '@uniswap/v3-sdk';
 import { ethers } from 'ethers';
-import { Pool, Position } from '@uniswap/v3-sdk';
-import { Token, Percent } from '@uniswap/sdk-core';
 import { NFT_POSITION_MANAGER, SLIPPAGE_TOLERANCE } from './utils/constants';
-import { priceToTick } from './utils/price';
 import {
-  calculateOptimalAmounts,
-  calculateMinimumAmounts,
+    calculateMinimumAmounts,
+    calculateOptimalAmounts,
 } from './utils/position';
+import { priceToTick } from './utils/price';
 
 // * Interface for position parameters
 interface AddLiquidityParams {

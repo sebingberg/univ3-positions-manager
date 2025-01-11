@@ -18,12 +18,11 @@
  *
  */
 
-import { Price, Token } from '@uniswap/sdk-core';
+import { Token } from '@uniswap/sdk-core';
 import {
-  TickMath,
-  priceToClosestTick,
-  tickToPrice,
-  encodeSqrtRatioX96,
+    TickMath,
+    encodeSqrtRatioX96,
+    tickToPrice
 } from '@uniswap/v3-sdk';
 
 /**

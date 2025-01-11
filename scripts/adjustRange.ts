@@ -21,10 +21,10 @@
  * * Note: New range can be wider or narrower than original
  */
 
-import { ethers } from 'ethers'
-import { NFT_POSITION_MANAGER, SLIPPAGE_TOLERANCE, MaxUint128 } from './utils/constants'
-import { priceToTick } from './utils/price'
 import { Token } from '@uniswap/sdk-core'
+import { ethers } from 'ethers'
+import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants'
+import { priceToTick } from './utils/price'
 
 interface AdjustRangeParams {
   newPriceLower: number

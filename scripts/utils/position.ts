@@ -18,7 +18,6 @@
  */
 
 import { Pool, Position } from '@uniswap/v3-sdk';
-import { Token, Percent } from '@uniswap/sdk-core';
 import { ethers } from 'ethers';
 import { SLIPPAGE_TOLERANCE } from './constants';
 

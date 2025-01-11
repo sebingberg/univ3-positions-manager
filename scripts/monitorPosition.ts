@@ -21,9 +21,8 @@
  * * Note: All fee calculations are done on-chain for accuracy
  */
 
-import { ethers } from 'ethers';
-import { Pool } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
+import { ethers } from 'ethers';
 import { NFT_POSITION_MANAGER } from './utils/constants';
 import { tickToTokenPrice } from './utils/price';
 
@@ -109,4 +108,4 @@ Uncollected Fees:
   `;
 }
 
-export { monitorPosition, PositionStatus, formatPositionStatus };
+export { formatPositionStatus, monitorPosition, PositionStatus };

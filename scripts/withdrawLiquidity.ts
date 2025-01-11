@@ -25,7 +25,7 @@
  */
 
 import { ethers } from 'ethers';
-import { NFT_POSITION_MANAGER, MaxUint128 } from './utils/constants';
+import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants';
 
 // * Configuration options for withdrawal process
 interface WithdrawOptions {
