@@ -7,9 +7,6 @@ import {
   USDC,
   WETH,
 } from '../../scripts/utils/constants';
-import { mockEthers } from '../mocks/contractMocks';
-
-mockEthers();
 
 describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
   it('should add liquidity with valid parameters', async () => {

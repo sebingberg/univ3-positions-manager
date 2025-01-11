@@ -4,9 +4,6 @@ import {
     monitorPosition,
 } from '../../scripts/monitorPosition';
 import { USDC, WETH } from '../../scripts/utils/constants';
-import { mockEthers } from '../mocks/contractMocks';
-
-mockEthers();
 
 describe('Monitor Position [scripts/monitorPosition.ts]', () => {
   it('should return position status', async () => {

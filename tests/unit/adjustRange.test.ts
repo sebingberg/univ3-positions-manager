@@ -6,9 +6,6 @@ import {
     USDC,
     WETH,
 } from '../../scripts/utils/constants';
-import { mockEthers } from '../mocks/contractMocks';
-
-mockEthers();
 
 describe('Adjust Range [scripts/adjustRange.ts]', () => {
   it('should adjust position range successfully', async () => {
