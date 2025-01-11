@@ -1,0 +1,38 @@
+{
+    "env": {
+      "browser": false,
+      "node": true,
+      "es2021": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:solidity/recommended",
+      "prettier"
+    ],
+    "plugins": ["@typescript-eslint", "solidity", "prettier"],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": 12,
+      "sourceType": "module",
+      "project": "./tsconfig.json"
+    },
+    "overrides": [
+      {
+        "files": ["*.sol"],
+        "parser": "solhint-parser",
+        "plugins": ["solidity"],
+        "extends": ["plugin:solidity/recommended"],
+        "rules": {
+          "solidity/no-inline-assembly": "off",
+          "solidity/visibility": ["error", { "ignoreConstructors": true }]
+        }
+      }
+    ],
+    "rules": {
+      "semi": ["error", "always"],
+      "quotes": ["error", "single"],
+      "@typescript-eslint/no-unused-vars": ["error"],
+      "prettier/prettier": "error"
+    }
+  }
