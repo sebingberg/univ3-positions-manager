@@ -32,7 +32,7 @@ interface LogEntry {
   level: LogLevel;
   operation: string;
   details: any;
-  txHash?: string;
+  txHash?: string | undefined;
 }
 
 /**
@@ -55,7 +55,7 @@ class Logger {
       level,
       operation,
       details,
-      txHash,
+      ...(txHash && { txHash })
     };
 
     this.logs.push(entry);
