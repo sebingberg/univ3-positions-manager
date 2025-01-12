@@ -152,7 +152,7 @@ This project uses:
 - Validates all inputs before execution
 
 ## Testnet Resources
-To test this application on Sepolia testnet, you'll need:
+To test this application on Sepolia testnet, you'll need the following:
 
 ### Test Tokens
 - Sepolia ETH: [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
@@ -166,7 +166,12 @@ To test this application on Sepolia testnet, you'll need:
 
 ### Sepolia Testnet Wallet Setup
 - Create a new wallet on MetaMask or any other wallet
-- Add Sepolia ETH to the wallet
-- Add Sepolia USDC to the wallet
+- Add Sepolia ETH to the wallet (you can use the faucet provided)
+- Add Sepolia USDC to the wallet (you can use the faucet provided)
 - Export the private key of the wallet
 - Set the private key in the `.env` file
+- You can create a new position with testnet tokens using the [official UniswapV3 front end](https://app.uniswap.org/positions/create) and be sure to enable `Testnet mode` in the Wallet settings in the top right of the webpage to access pools and tokens in the Sepolia Testnet
+
+### Sepolia Additional Resources
+- [Sepolia Resources](https://sepolia.dev/)
+- [Sepolia Etherscan](https://sepolia.etherscan.io/)
