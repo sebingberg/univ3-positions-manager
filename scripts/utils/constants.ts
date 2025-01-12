@@ -66,4 +66,4 @@ export const FEE_TIERS = {
 export const SLIPPAGE_TOLERANCE = 0.5; // 0.5%
 
 // * Useful constants for contract interactions
-export const MaxUint128 = 2n ** 128n - 1n;
+export const MaxUint128 = 2n ** 128n - 1n; // Since Ethers v6 doesn't provide this
