@@ -3,10 +3,10 @@ import { addLiquidity } from '../../scripts/addLiquidity';
 import { adjustRange } from '../../scripts/adjustRange';
 import { monitorPosition } from '../../scripts/monitorPosition';
 import {
-    FEE_TIERS,
-    POOL_ADDRESS,
-    USDC,
-    WETH,
+  FEE_TIERS,
+  POOL_ADDRESS,
+  USDC,
+  WETH,
 } from '../../scripts/utils/constants';
 import { withdrawLiquidity } from '../../scripts/withdrawLiquidity';
 

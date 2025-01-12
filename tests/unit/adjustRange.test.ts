@@ -2,9 +2,9 @@ import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
 import { adjustRange } from '../../scripts/adjustRange';
 import {
-    NFT_POSITION_MANAGER,
-    USDC,
-    WETH,
+  NFT_POSITION_MANAGER,
+  USDC,
+  WETH,
 } from '../../scripts/utils/constants';
 
 describe('Adjust Range [scripts/adjustRange.ts]', () => {

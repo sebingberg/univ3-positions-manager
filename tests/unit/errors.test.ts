@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { addLiquidity } from '../../scripts/addLiquidity';
 import { monitorPosition } from '../../scripts/monitorPosition';
-import { FEE_TIERS, USDC, WETH, POOL_ADDRESS } from '../../scripts/utils/constants';
+import {
+  FEE_TIERS,
+  USDC,
+  WETH,
+  POOL_ADDRESS,
+} from '../../scripts/utils/constants';
 
 describe('Error Handling', () => {
   it('should handle invalid price ranges', async () => {
@@ -12,7 +17,7 @@ describe('Error Handling', () => {
       amount: '0.1',
       priceLower: 2000, // Higher than upper
       priceUpper: 1800,
-      poolAddress: POOL_ADDRESS
+      poolAddress: POOL_ADDRESS,
     };
 
     await expect(addLiquidity(params)).rejects.toThrow();
@@ -30,7 +35,7 @@ describe('Error Handling', () => {
       amount: '1000000', // An unrealistic ETH amount for mere mortals
       priceLower: 1750,
       priceUpper: 1850,
-      poolAddress: POOL_ADDRESS
+      poolAddress: POOL_ADDRESS,
     };
 
     await expect(addLiquidity(params)).rejects.toThrow();

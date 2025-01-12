@@ -3,7 +3,7 @@
 /**
  * @file cli.ts
  * @description Command Line Interface for Uniswap V3 Position Manager
- * 
+ *
  * ! IMPORTANT: Before using this CLI, ensure you have:
  * ! 1. Set up your .env file with RPC_URL and PRIVATE_KEY
  * ! 2. Updated POOL_ADDRESS in constants.ts
@@ -49,16 +49,16 @@ program
         poolAddress: POOL_ADDRESS, // ! TODO: Ensure this is set in constants.ts
       };
       const result = await addLiquidity(params);
-      logger.info('Liquidity Added to Position', { 
+      logger.info('Liquidity Added to Position', {
         tokenId: options.id,
         addedLiquidity: result?.events?.[0]?.args?.liquidity?.toString(),
-        params 
+        params,
       });
     } catch (error) {
-      logger.error('Failed to add liquidity to position', { 
+      logger.error('Failed to add liquidity to position', {
         error: (error as Error).message,
         tokenId: options.id,
-        params: options 
+        params: options,
       });
     }
   });
@@ -72,9 +72,9 @@ program
       const status = await monitorPosition(Number(options.id), WETH, USDC);
       logger.info('Position Status', { status });
     } catch (error) {
-      logger.error('Failed to monitor position', { 
+      logger.error('Failed to monitor position', {
         error: (error as Error).message,
-        tokenId: options.id 
+        tokenId: options.id,
       });
     }
   });
@@ -85,7 +85,10 @@ program
   .requiredOption('-i, --id <tokenId>', 'Position token ID')
   .requiredOption('-l, --lower <price>', 'New lower price bound')
   .requiredOption('-u, --upper <price>', 'New upper price bound')
-  .requiredOption('-s, --slippage <percentage>', 'Slippage tolerance in percentage')
+  .requiredOption(
+    '-s, --slippage <percentage>',
+    'Slippage tolerance in percentage',
+  )
   .action(async (options) => {
     try {
       await adjustRange(Number(options.id), WETH, USDC, {
@@ -93,14 +96,14 @@ program
         newPriceUpper: Number(options.upper),
         slippageTolerance: Number(options.slippage),
       });
-      logger.info('Range Adjusted Successfully', { 
+      logger.info('Range Adjusted Successfully', {
         tokenId: options.id,
-        newRange: { lower: options.lower, upper: options.upper }
+        newRange: { lower: options.lower, upper: options.upper },
       });
     } catch (error) {
-      logger.error('Failed to adjust range', { 
+      logger.error('Failed to adjust range', {
         error: (error as Error).message,
-        params: options 
+        params: options,
       });
     }
   });
@@ -110,24 +113,27 @@ program
   .description('Withdraw liquidity')
   .requiredOption('-i, --id <tokenId>', 'Position token ID')
   .requiredOption('-p, --percentage <amount>', 'Percentage to withdraw (1-100)')
-  .requiredOption('-f, --fees <boolean>', 'Whether to collect fees (true/false)')
+  .requiredOption(
+    '-f, --fees <boolean>',
+    'Whether to collect fees (true/false)',
+  )
   .action(async (options) => {
     try {
       await withdrawLiquidity(Number(options.id), {
         percentageToWithdraw: Number(options.percentage),
         collectFees: options.fees === 'true',
       });
-      logger.info('Withdrawal Successful', { 
+      logger.info('Withdrawal Successful', {
         tokenId: options.id,
         percentage: options.percentage,
-        collectFees: options.fees
+        collectFees: options.fees,
       });
     } catch (error) {
-      logger.error('Failed to withdraw', { 
+      logger.error('Failed to withdraw', {
         error: (error as Error).message,
-        params: options 
+        params: options,
       });
     }
   });
 
-program.parse(); 
+program.parse();

@@ -19,11 +19,7 @@
  */
 
 import { Token } from '@uniswap/sdk-core';
-import {
-    TickMath,
-    encodeSqrtRatioX96,
-    tickToPrice
-} from '@uniswap/v3-sdk';
+import { TickMath, encodeSqrtRatioX96, tickToPrice } from '@uniswap/v3-sdk';
 
 /**
  * ! Critical function for converting price to corresponding pool tick

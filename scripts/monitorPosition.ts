@@ -56,7 +56,7 @@ async function monitorPosition(
     async () => {
       // * Log monitoring request
       logger.info('Monitoring Position', { tokenId });
-      
+
       // * Initialize provider and contracts
       const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 

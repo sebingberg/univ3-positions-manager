@@ -71,8 +71,19 @@ async function withdrawLiquidity(
         wallet,
       ) as ethers.Contract & {
         positions: (tokenId: number) => Promise<any>;
-        decreaseLiquidity: (tokenId: number, liquidity: bigint, amount0Min: number, amount1Min: number, deadline: bigint) => Promise<any>;
-        collect: (tokenId: number, recipient: string, amount0Max: bigint, amount1Max: bigint) => Promise<any>;
+        decreaseLiquidity: (
+          tokenId: number,
+          liquidity: bigint,
+          amount0Min: number,
+          amount1Min: number,
+          deadline: bigint,
+        ) => Promise<any>;
+        collect: (
+          tokenId: number,
+          recipient: string,
+          amount0Max: bigint,
+          amount1Max: bigint,
+        ) => Promise<any>;
       };
 
       // * Fetch current position state
@@ -80,11 +91,14 @@ async function withdrawLiquidity(
 
       // * Calculate amount of liquidity to withdraw based on percentage
       const liquidityToWithdraw =
-        (BigInt(position.liquidity) * BigInt(options.percentageToWithdraw!)) / 100n;
+        (BigInt(position.liquidity) * BigInt(options.percentageToWithdraw!)) /
+        100n;
 
       // ! Step 1: Decrease liquidity if requested
       if (liquidityToWithdraw > 0n) {
-        console.log(`Withdrawing ${options.percentageToWithdraw}% of liquidity...`);
+        console.log(
+          `Withdrawing ${options.percentageToWithdraw}% of liquidity...`,
+        );
         // * Set deadline 10 minutes in the future
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 

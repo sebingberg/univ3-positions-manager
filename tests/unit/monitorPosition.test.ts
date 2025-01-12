@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    formatPositionStatus,
-    monitorPosition,
+  formatPositionStatus,
+  monitorPosition,
 } from '../../scripts/monitorPosition';
 import { USDC, WETH } from '../../scripts/utils/constants';
 
