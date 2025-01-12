@@ -12,8 +12,9 @@ A TypeScript CLI tool for managing Uniswap V3 liquidity positions on Sepolia tes
 ## Prerequisites
 - Node.js >= 18 (tested with LTS v20.11.0)
 - pnpm (tested with v9.1.0)
-- A Sepolia testnet wallet with ETH and tokens (along with its private key)
+- A Sepolia testnet wallet with Sepolia ETH and tokens (along with its private key)
 - Infura/Alchemy API key (or you can use a public RPC URL)
+- See the end of the README for more details on how to set up a Sepolia testnet wallet
 
 ## Quick Start
 ```bash
@@ -137,3 +138,23 @@ This project uses:
 - Implements comprehensive error handling
 - Includes detailed operation logging
 - Validates all inputs before execution
+
+## Testnet Resources
+To test this application on Sepolia testnet, you'll need:
+
+### Test Tokens
+- Sepolia ETH: [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
+- Sepolia USDC: [Circle USDC Faucet](https://faucet.circle.com/)
+
+### Network Details
+- Network Name: Sepolia
+- Chain ID: 11155111
+- Currency Symbol: SepoliaETH
+- Block Explorer: sepolia.etherscan.io
+
+### Sepolia Testnet Wallet Setup
+- Create a new wallet on MetaMask or any other wallet
+- Add Sepolia ETH to the wallet
+- Add Sepolia USDC to the wallet
+- Export the private key of the wallet
+- Set the private key in the `.env` file
