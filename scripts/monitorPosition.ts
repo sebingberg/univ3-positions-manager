@@ -25,6 +25,8 @@ import { Token } from '@uniswap/sdk-core';
 import { ethers } from 'ethers';
 import { NFT_POSITION_MANAGER } from './utils/constants';
 import { tickToTokenPrice } from './utils/price';
+import { withErrorHandling } from './utils/errorHandler';
+import { logger } from './utils/logger';
 
 /**
  * ! Interface for position monitoring results
@@ -50,43 +52,51 @@ async function monitorPosition(
   baseToken: Token,
   quoteToken: Token,
 ): Promise<PositionStatus> {
-  // * Initialize provider and contracts
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+  return await withErrorHandling(
+    async () => {
+      // * Log monitoring request
+      logger.info('Monitoring Position', { tokenId });
+      
+      // * Initialize provider and contracts
+      const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
-  // ! Get position manager contract
-  const positionManager = new ethers.Contract(
-    NFT_POSITION_MANAGER,
-    [
-      'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
-      'function collect(uint256 tokenId) external returns (uint256 amount0, uint256 amount1)',
-    ],
-    provider,
+      // ! Get position manager contract
+      const positionManager = new ethers.Contract(
+        NFT_POSITION_MANAGER,
+        [
+          'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
+          'function collect(uint256 tokenId) external returns (uint256 amount0, uint256 amount1)',
+        ],
+        provider,
+      );
+
+      // * Get position details
+      const position = await positionManager.positions(tokenId);
+
+      // * Get pool contract to fetch current price
+      const poolContract = new ethers.Contract(
+        position.pool,
+        [
+          'function slot0() external view returns (uint160 sqrtPriceX96, int24 tick)',
+        ],
+        provider,
+      );
+
+      const { tick } = await poolContract.slot0();
+      const currentPrice = tickToTokenPrice(tick, baseToken, quoteToken);
+
+      return {
+        tokenId,
+        liquidity: position.liquidity,
+        feeGrowthInside0: position.feeGrowthInside0LastX128,
+        feeGrowthInside1: position.feeGrowthInside1LastX128,
+        tokensOwed0: position.tokensOwed0,
+        tokensOwed1: position.tokensOwed1,
+        currentPrice,
+      };
+    },
+    { operation: 'monitorPosition', params: { tokenId } },
   );
-
-  // * Get position details
-  const position = await positionManager.positions(tokenId);
-
-  // * Get pool contract to fetch current price
-  const poolContract = new ethers.Contract(
-    position.pool,
-    [
-      'function slot0() external view returns (uint160 sqrtPriceX96, int24 tick)',
-    ],
-    provider,
-  );
-
-  const { tick } = await poolContract.slot0();
-  const currentPrice = tickToTokenPrice(tick, baseToken, quoteToken);
-
-  return {
-    tokenId,
-    liquidity: position.liquidity,
-    feeGrowthInside0: position.feeGrowthInside0LastX128,
-    feeGrowthInside1: position.feeGrowthInside1LastX128,
-    tokensOwed0: position.tokensOwed0,
-    tokensOwed1: position.tokensOwed1,
-    currentPrice,
-  };
 }
 
 /**

@@ -25,6 +25,9 @@ import { Token } from '@uniswap/sdk-core'
 import { ethers } from 'ethers'
 import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants'
 import { priceToTick } from './utils/price'
+import { validateAdjustRangeParams } from './utils/validation'
+import { withErrorHandling } from './utils/errorHandler'
+import { logger } from './utils/logger'
 
 interface AdjustRangeParams {
   newPriceLower: number
@@ -38,66 +41,91 @@ async function adjustRange(
   quoteToken: Token,
   params: AdjustRangeParams
 ) {
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL)
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider)
+  // ! Validate adjustment parameters
+  validateAdjustRangeParams(params)
 
-  // ! Initialize position manager contract with required method signatures
-  const positionManager = new ethers.Contract(
-    NFT_POSITION_MANAGER,
-    [
-      'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
-      'function decreaseLiquidity(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline) external returns (uint256 amount0, uint256 amount1)',
-      'function collect(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) external returns (uint128 amount0, uint128 amount1)',
-      'function mint(address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 amount0Desired, uint128 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline) external returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)'
-    ],
-    wallet
+  return await withErrorHandling(
+    async () => {
+      // * Log range adjustment start
+      logger.info('Adjusting Position Range', {
+        tokenId,
+        newRange: `${params.newPriceLower}-${params.newPriceUpper}`,
+      })
+
+      const provider = new ethers.JsonRpcProvider(process.env.RPC_URL)
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider)
+
+      // ! Initialize position manager contract with required method signatures
+      const positionManager = new ethers.Contract(
+        NFT_POSITION_MANAGER,
+        [
+          'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
+          'function decreaseLiquidity(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline) external returns (uint256 amount0, uint256 amount1)',
+          'function collect(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) external returns (uint128 amount0, uint128 amount1)',
+          'function mint(address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 amount0Desired, uint128 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline) external returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)'
+        ],
+        wallet
+      )
+
+      // * Get current position
+      const position = await positionManager.positions(tokenId)
+
+      // * Convert new prices to ticks
+      const newTickLower = priceToTick(params.newPriceLower, baseToken, quoteToken)
+      const newTickUpper = priceToTick(params.newPriceUpper, baseToken, quoteToken)
+
+      // ! Step 1: Remove all liquidity from current position
+      console.log('Removing liquidity from current position...')
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+      
+      await positionManager.decreaseLiquidity(
+        tokenId,
+        position.liquidity,
+        0, // TODO: Add slippage protection
+        0,
+        deadline
+      )
+
+      // ! Step 2: Collect all tokens
+      console.log('Collecting withdrawn tokens...')
+      await positionManager.collect(
+        tokenId,
+        wallet.address,
+        MaxUint128,
+        MaxUint128
+      )
+
+      // ! Step 3: Create new position with collected tokens
+      console.log('Creating new position with adjusted range...')
+      const tx = await positionManager.mint(
+        position.token0,
+        position.token1,
+        position.fee,
+        newTickLower,
+        newTickUpper,
+        position.amount0,
+        position.amount1,
+        0, // TODO: Add slippage protection
+        0,
+        wallet.address,
+        deadline
+      )
+
+      const receipt = await tx.wait()
+      await logger.logTransaction('Range Adjusted', receipt, {
+        tokenId,
+        newTickLower,
+        newTickUpper,
+      })
+
+      return true
+    },
+    {
+      operation: 'adjustRange',
+      params: { tokenId, ...params },
+      contractAddress: NFT_POSITION_MANAGER,
+    },
   )
-
-  // * Get current position
-  const position = await positionManager.positions(tokenId)
-
-  // * Convert new prices to ticks
-  const newTickLower = priceToTick(params.newPriceLower, baseToken, quoteToken)
-  const newTickUpper = priceToTick(params.newPriceUpper, baseToken, quoteToken)
-
-  // ! Step 1: Remove all liquidity from current position
-  console.log('Removing liquidity from current position...')
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-  
-  await positionManager.decreaseLiquidity(
-    tokenId,
-    position.liquidity,
-    0, // TODO: Add slippage protection
-    0,
-    deadline
-  )
-
-  // ! Step 2: Collect all tokens
-  console.log('Collecting withdrawn tokens...')
-  await positionManager.collect(
-    tokenId,
-    wallet.address,
-    MaxUint128,
-    MaxUint128
-  )
-
-  // ! Step 3: Create new position with collected tokens
-  console.log('Creating new position with adjusted range...')
-  await positionManager.mint(
-    position.token0,
-    position.token1,
-    position.fee,
-    newTickLower,
-    newTickUpper,
-    position.amount0,
-    position.amount1,
-    0, // TODO: Add slippage protection
-    0,
-    wallet.address,
-    deadline
-  )
-
-  return true
 }
 
 export { adjustRange, AdjustRangeParams }
