@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateAddLiquidityParams } from '../../scripts/utils/validation';
-import { WETH, USDC, FEE_TIERS } from '../../scripts/utils/constants';
+import { WETH, USDC, FEE_TIERS, POOL_ADDRESS } from '../../scripts/utils/constants';
 
 describe('Input Validation', () => {
   it('should validate add liquidity parameters', () => {
@@ -11,7 +11,7 @@ describe('Input Validation', () => {
       amount: '1.5',
       priceLower: 1750,
       priceUpper: 1850,
-      poolAddress: '0x1234...',
+      poolAddress: POOL_ADDRESS,
     };
 
     expect(() => validateAddLiquidityParams(validParams)).not.toThrow();
@@ -25,7 +25,7 @@ describe('Input Validation', () => {
       amount: '-1.5', // Negative amount
       priceLower: 1750,
       priceUpper: 1850,
-      poolAddress: '0x1234...',
+      poolAddress: POOL_ADDRESS,
     };
 
     expect(() => validateAddLiquidityParams(invalidParams)).toThrow();

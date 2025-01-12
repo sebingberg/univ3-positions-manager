@@ -6,6 +6,7 @@ import {
   NFT_POSITION_MANAGER,
   USDC,
   WETH,
+  POOL_ADDRESS,
 } from '../../scripts/utils/constants';
 
 describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
@@ -17,7 +18,7 @@ describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
       amount: '1.5',
       priceLower: 1750,
       priceUpper: 1850,
-      poolAddress: '0x1234567890123456789012345678901234567890',
+      poolAddress: POOL_ADDRESS,
     };
 
     const result = await addLiquidity(params);
@@ -40,7 +41,7 @@ describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
       amount: '1.5',
       priceLower: 1850, // Invalid: lower > upper
       priceUpper: 1750,
-      poolAddress: '0x1234567890123456789012345678901234567890',
+      poolAddress: POOL_ADDRESS,
     };
 
     await expect(addLiquidity(params)).rejects.toThrow();
@@ -54,7 +55,7 @@ describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
       amount: '1.5',
       priceLower: 1750,
       priceUpper: 1850,
-      poolAddress: '0x1234567890123456789012345678901234567890',
+      poolAddress: POOL_ADDRESS,
     };
 
     await expect(addLiquidity(paramsLow)).resolves.toBeDefined();

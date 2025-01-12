@@ -23,7 +23,7 @@
 
 import { AddLiquidityParams } from '../addLiquidity';
 import { AdjustRangeParams } from '../adjustRange';
-import { FEE_TIERS } from './constants';
+import { FEE_TIERS, POOL_ADDRESS } from './constants';
 import { validatePriceRange } from './price';
 
 /**
@@ -49,7 +49,7 @@ export function validateAddLiquidityParams(params: AddLiquidityParams) {
   }
 
   validatePriceRange(params.priceLower, params.priceUpper);
-  validatePoolAddress(params.poolAddress);
+  validatePoolAddress(params.poolAddress || POOL_ADDRESS);
 }
 
 /**
@@ -72,7 +72,7 @@ export function validateAdjustRangeParams(params: AdjustRangeParams) {
 }
 
 /**
- * @dev Validates Ethereum address format for pools
+ * @dev Validates Ethereum address (eg: '0x___') format for pools
  * @param address Pool address to validate
  * @throws Error if address format is invalid
  */

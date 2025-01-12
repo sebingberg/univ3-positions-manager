@@ -70,4 +70,4 @@ export const SLIPPAGE_TOLERANCE = 0.005; // 0.5% slippage tolerance
 export const MaxUint128 = 2n ** 128n - 1n;
 
 // TODO Add your Sepolia WETH/USDC pool address here
-export const POOL_ADDRESS = '0x...' // Update this with your pool address
+export const POOL_ADDRESS = '0x...' // ! Update this with your pool address
