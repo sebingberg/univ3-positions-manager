@@ -5,16 +5,16 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "lint": "eslint src/**/*.{js,ts,sol}",
-    "format": "prettier --write \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
-    "type-check": "tsc --noEmit",
-    "lint:fix": "eslint --fix src/**/*.{js,ts,sol}",
-    "format:check": "prettier --check \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "check": "pnpm type-check && pnpm lint && pnpm format:check",
-    "test:watch": "vitest watch",
+    "cli": "ts-node scripts/cli.ts",
+    "format": "prettier --write \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
+    "format:check": "prettier --check \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
+    "lint": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\"",
+    "lint:fix": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\" --fix",
+    "start": "node dist/index.js",
     "test:coverage": "vitest run --coverage",
-    "cli": "ts-node scripts/cli.ts"
+    "test:watch": "vitest watch",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "SushiswapV3",
@@ -55,5 +55,6 @@
   },
   "bin": {
     "univ3": "./dist/cli.js"
-  }
+  },
+  "type": "module"
 }
