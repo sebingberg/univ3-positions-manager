@@ -69,7 +69,11 @@ async function withdrawLiquidity(
           'function collect(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) external returns (uint128 amount0, uint128 amount1)',
         ],
         wallet,
-      );
+      ) as ethers.Contract & {
+        positions: (tokenId: number) => Promise<any>;
+        decreaseLiquidity: (tokenId: number, liquidity: bigint, amount0Min: number, amount1Min: number, deadline: bigint) => Promise<any>;
+        collect: (tokenId: number, recipient: string, amount0Max: bigint, amount1Max: bigint) => Promise<any>;
+      };
 
       // * Fetch current position state
       const position = await positionManager.positions(tokenId);

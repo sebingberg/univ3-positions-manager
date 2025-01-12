@@ -85,6 +85,10 @@ async function addLiquidity(params: AddLiquidityParams) {
         provider,
       );
 
+      // Add type assertion or runtime check
+      if (!poolContract.slot0) {
+        throw new Error('Pool contract slot0 method not found');
+      }
       const { sqrtPriceX96, tick } = await poolContract.slot0();
 
       // * Initialize pool instance
@@ -129,6 +133,10 @@ async function addLiquidity(params: AddLiquidityParams) {
       );
 
       console.log('Approving tokens...');
+      // Add type assertions or runtime checks
+      if (!tokenAContract.approve || !tokenBContract.approve) {
+        throw new Error('Token contract approve method not found');
+      }
       await tokenAContract.approve(NFT_POSITION_MANAGER, ethers.MaxUint256);
       await tokenBContract.approve(NFT_POSITION_MANAGER, ethers.MaxUint256);
 
@@ -144,6 +152,10 @@ async function addLiquidity(params: AddLiquidityParams) {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600); // 10 minutes
 
       console.log('Adding liquidity...');
+      // Add type assertion or runtime check
+      if (!positionManager.mint) {
+        throw new Error('Position manager mint method not found');
+      }
       const tx = await positionManager.mint({
         token0: tokenA.address,
         token1: tokenB.address,

@@ -65,7 +65,12 @@ async function adjustRange(
           'function mint(address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 amount0Desired, uint128 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline) external returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)'
         ],
         wallet
-      )
+      ) as ethers.Contract & {
+        positions: (tokenId: number) => Promise<any>;
+        decreaseLiquidity: (tokenId: number, liquidity: bigint, amount0Min: number, amount1Min: number, deadline: bigint) => Promise<any>;
+        collect: (tokenId: number, recipient: string, amount0Max: bigint, amount1Max: bigint) => Promise<any>;
+        mint: (token0: string, token1: string, fee: number, tickLower: number, tickUpper: number, amount0Desired: bigint, amount1Desired: bigint, amount0Min: number, amount1Min: number, recipient: string, deadline: bigint) => Promise<any>;
+      };
 
       // * Get current position
       const position = await positionManager.positions(tokenId)

@@ -68,7 +68,9 @@ async function monitorPosition(
           'function collect(uint256 tokenId) external returns (uint256 amount0, uint256 amount1)',
         ],
         provider,
-      );
+      ) as ethers.Contract & {
+        positions: (tokenId: number) => Promise<any>;
+      };
 
       // * Get position details
       const position = await positionManager.positions(tokenId);
@@ -80,7 +82,9 @@ async function monitorPosition(
           'function slot0() external view returns (uint160 sqrtPriceX96, int24 tick)',
         ],
         provider,
-      );
+      ) as ethers.Contract & {
+        slot0: () => Promise<{ sqrtPriceX96: bigint; tick: number }>;
+      };
 
       const { tick } = await poolContract.slot0();
       const currentPrice = tickToTokenPrice(tick, baseToken, quoteToken);
