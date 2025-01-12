@@ -21,6 +21,12 @@ export default [
         ecmaVersion: 2021,
         sourceType: 'module',
         project: './tsconfig.json'
+      },
+      globals: {
+        console: true,
+        process: true,
+        module: true,
+        require: true
       }
     },
     rules: {
