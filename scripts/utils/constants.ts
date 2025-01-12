@@ -27,47 +27,43 @@
  */
 
 import { Token } from '@uniswap/sdk-core';
+import { config } from 'dotenv';
 
-// ! Network Configuration
-export const NETWORK = 'sepolia';
-export const RPC_URL = process.env.SEPOLIA_RPC_URL;
+config();
 
-// * Contract Addresses for Uniswap V3 on Sepolia Testnet
-// ! Update these addresses when deploying to different networks
-export const NFT_POSITION_MANAGER =
-  '0x1238536071E1c677A632429e3655c799b22cDA52';
-export const SWAP_ROUTER = '0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E';
+// Network
+export const CHAIN_ID = Number(process.env.CHAIN_ID);
+export const NETWORK_NAME = process.env.NETWORK_NAME;
 
-// * Test Tokens Configuration
-// ! Update token addresses and chainId for different networks
+// Tokens
 export const WETH = new Token(
-  11155111, // Sepolia chainId
-  '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9',
+  CHAIN_ID,
+  process.env.WETH_ADDRESS!,
   18,
   'WETH',
   'Wrapped Ether',
 );
 
 export const USDC = new Token(
-  11155111,
-  '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-  6, // ! Important: USDC uses 6 decimals, not 18
+  CHAIN_ID,
+  process.env.USDC_ADDRESS!,
+  6,
   'USDC',
   'USD Coin',
 );
 
-// * Fee tiers available in UniswapV3 pools
-export const FEE_TIERS = {
-  LOW: 500, // 0.05%
-  MEDIUM: 3000, // 0.3%
-  HIGH: 10000, // 1%
-};
+// Uniswap
+export const POOL_ADDRESS = process.env.POOL_ADDRESS!;
+export const NFT_POSITION_MANAGER = process.env.NFT_POSITION_MANAGER!;
 
-// * Default safety parameters
-export const SLIPPAGE_TOLERANCE = 0.005; // 0.5% slippage tolerance
+// Other constants remain the same
+export const FEE_TIERS = {
+  LOW: 500, // 0.05% or 500 bp
+  MEDIUM: 3000, // 0.3% or 3000 bp
+  HIGH: 10000, // 1% or 10000 bp
+} as const;
+
+export const SLIPPAGE_TOLERANCE = 0.5; // 0.5%
 
 // * Useful constants for contract interactions
 export const MaxUint128 = 2n ** 128n - 1n;
-
-// TODO Add your Sepolia WETH/USDC pool address here
-export const POOL_ADDRESS = '0x...'; // ! Update this with your pool address
