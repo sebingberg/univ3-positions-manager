@@ -94,12 +94,24 @@ Required options:
 ```
 
 ## Environment Setup
+A `.env.example` file is provided as a template. Copy it to create your own `.env`:
 
-Create a `.env` file in the root directory:
 ```bash
-RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
-PRIVATE_KEY=your_wallet_private_key
+cp .env.example .env
 ```
+
+Required environment variables:
+- `RPC_URL`: Sepolia RPC endpoint
+- `CHAIN_ID`: 11155111 for Sepolia
+- `NETWORK_NAME`: sepolia
+- `WETH_ADDRESS`: Wrapped ETH contract on Sepolia
+- `USDC_ADDRESS`: USDC contract on Sepolia
+- `POOL_ADDRESS`: WETH/USDC pool address
+- `NFT_POSITION_MANAGER`: Uniswap V3 NFT manager
+- `PRIVATE_KEY`: Your wallet's private key
+
+Optional:
+- `BLOCK_EXPLORER`: Etherscan URL for Sepolia
 
 ## Development Scripts
 ```bash
