@@ -32,32 +32,31 @@ config();
 import { Token } from '@uniswap/sdk-core';
 import { Pool } from '@uniswap/v3-sdk';
 import { ethers } from 'ethers';
-import { NFT_POSITION_MANAGER, SLIPPAGE_TOLERANCE } from './utils/constants';
+import {
+  NFT_POSITION_MANAGER,
+  POOL_ADDRESS,
+  SLIPPAGE_TOLERANCE,
+} from './utils/constants';
+import { withErrorHandling } from './utils/errorHandler';
+import { logger } from './utils/logger';
 import {
   calculateMinimumAmounts,
   calculateOptimalAmounts,
 } from './utils/position';
 import { priceToTick } from './utils/price';
 import { validateAddLiquidityParams } from './utils/validation';
-import { withErrorHandling } from './utils/errorHandler';
-import { logger } from './utils/logger';
 
-// * Interface for position parameters
-interface AddLiquidityParams {
+export interface AddLiquidityParams {
   tokenA: Token;
   tokenB: Token;
   fee: number;
   amount: string;
   priceLower: number;
   priceUpper: number;
-  poolAddress: string;
+  poolAddress?: string; // ! Optional: Override default pool address from constants
 }
 
-/**
- * ! Main function to add liquidity to a Uniswap V3 pool
- * @param params Configuration parameters for the liquidity position
- */
-async function addLiquidity(params: AddLiquidityParams) {
+export async function addLiquidity(params: AddLiquidityParams) {
   // ! Validate all input parameters first
   validateAddLiquidityParams(params);
 
@@ -80,8 +79,10 @@ async function addLiquidity(params: AddLiquidityParams) {
 
       // ! Get pool contract and fetch current state
       const poolContract = new ethers.Contract(
-        params.poolAddress,
-        ['function slot0() view returns (uint160 sqrtPriceX96, int24 tick)'],
+        params.poolAddress || POOL_ADDRESS, // Use provided pool address or default
+        [
+          'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, ...)',
+        ],
         provider,
       );
 
@@ -184,6 +185,3 @@ async function addLiquidity(params: AddLiquidityParams) {
     },
   );
 }
-
-// * Export for use in other files
-export { addLiquidity, AddLiquidityParams };
