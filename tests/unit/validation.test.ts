@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { validateAddLiquidityParams } from '../../scripts/utils/validation';
+import { describe, expect, it } from 'vitest';
+
 import {
-  WETH,
-  USDC,
   FEE_TIERS,
   POOL_ADDRESS,
+  USDC,
+  WETH,
 } from '../../scripts/utils/constants';
+import { validateAddLiquidityParams } from '../../scripts/utils/validation';
 
 describe('Input Validation', () => {
   it('should validate add liquidity parameters', () => {

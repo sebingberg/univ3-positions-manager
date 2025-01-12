@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
+
 import { adjustRange } from '../../scripts/adjustRange';
 import {
   NFT_POSITION_MANAGER,

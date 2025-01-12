@@ -1,12 +1,13 @@
 import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
+
 import { addLiquidity } from '../../scripts/addLiquidity';
 import {
   FEE_TIERS,
   NFT_POSITION_MANAGER,
+  POOL_ADDRESS,
   USDC,
   WETH,
-  POOL_ADDRESS,
 } from '../../scripts/utils/constants';
 
 describe('Add Liquidity [scripts/addLiquidity.ts]', () => {

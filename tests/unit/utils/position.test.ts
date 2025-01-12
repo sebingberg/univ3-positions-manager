@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
 import { Pool } from '@uniswap/v3-sdk';
+import { describe, expect, it } from 'vitest';
+
+import { FEE_TIERS, USDC, WETH } from '../../../scripts/utils/constants';
 import {
-  calculateOptimalAmounts,
   calculateMinimumAmounts,
+  calculateOptimalAmounts,
 } from '../../../scripts/utils/position';
-import { WETH, USDC, FEE_TIERS } from '../../../scripts/utils/constants';
 
 describe('Position Utilities [scripts/utils/position.ts]', () => {
   describe('calculateOptimalAmounts()', () => {

@@ -26,12 +26,11 @@
  * * Note: Amount is in ETH units (e.g., "1.5" = 1.5 ETH worth of liquidity)
  */
 
-import { config } from 'dotenv';
-config();
-
 import { Token } from '@uniswap/sdk-core';
 import { Pool } from '@uniswap/v3-sdk';
+import { config } from 'dotenv';
 import { ethers } from 'ethers';
+
 import {
   NFT_POSITION_MANAGER,
   POOL_ADDRESS,
@@ -45,6 +44,8 @@ import {
 } from './utils/position';
 import { priceToTick } from './utils/price';
 import { validateAddLiquidityParams } from './utils/validation';
+
+config();
 
 export interface AddLiquidityParams {
   tokenA: Token;

@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
+  FEE_TIERS,
+  MaxUint128,
   NETWORK,
   NFT_POSITION_MANAGER,
-  SWAP_ROUTER,
-  WETH,
-  USDC,
-  FEE_TIERS,
   SLIPPAGE_TOLERANCE,
-  MaxUint128,
+  SWAP_ROUTER,
+  USDC,
+  WETH,
 } from '../../../scripts/utils/constants';
 
 describe('Constants [scripts/utils/constants.ts]', () => {

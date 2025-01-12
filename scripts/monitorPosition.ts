@@ -23,10 +23,11 @@
 
 import { Token } from '@uniswap/sdk-core';
 import { ethers } from 'ethers';
+
 import { NFT_POSITION_MANAGER } from './utils/constants';
-import { tickToTokenPrice } from './utils/price';
 import { withErrorHandling } from './utils/errorHandler';
 import { logger } from './utils/logger';
+import { tickToTokenPrice } from './utils/price';
 
 /**
  * ! Interface for position monitoring results

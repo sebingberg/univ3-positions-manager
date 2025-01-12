@@ -1,5 +1,6 @@
 import { Token } from '@uniswap/sdk-core';
 import { describe, expect, it } from 'vitest';
+
 import { USDC, WETH } from '../../../scripts/utils/constants';
 import {
   priceToTick,

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+
 import { addLiquidity } from '../../scripts/addLiquidity';
 import { monitorPosition } from '../../scripts/monitorPosition';
 import {
   FEE_TIERS,
+  POOL_ADDRESS,
   USDC,
   WETH,
-  POOL_ADDRESS,
 } from '../../scripts/utils/constants';
 
 describe('Error Handling', () => {

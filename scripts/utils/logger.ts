@@ -55,7 +55,7 @@ class Logger {
       level,
       operation,
       details,
-      ...(txHash && { txHash })
+      ...(txHash && { txHash }),
     };
 
     this.logs.push(entry);

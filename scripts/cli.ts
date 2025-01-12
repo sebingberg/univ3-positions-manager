@@ -11,12 +11,13 @@
  */
 
 import { Command } from 'commander';
+
 import { addLiquidity, AddLiquidityParams } from './addLiquidity';
-import { monitorPosition } from './monitorPosition';
 import { adjustRange } from './adjustRange';
-import { withdrawLiquidity } from './withdrawLiquidity';
-import { WETH, USDC, FEE_TIERS, POOL_ADDRESS } from './utils/constants';
+import { monitorPosition } from './monitorPosition';
+import { FEE_TIERS, POOL_ADDRESS, USDC, WETH } from './utils/constants';
 import { logger } from './utils/logger';
+import { withdrawLiquidity } from './withdrawLiquidity';
 
 const program = new Command();
 
