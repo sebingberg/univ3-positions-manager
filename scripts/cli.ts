@@ -27,6 +27,7 @@ program
   .option('-l, --lower <price>', 'Lower price bound', '1750')
   .option('-u, --upper <price>', 'Upper price bound', '1850')
   .option('-f, --fee <tier>', 'Fee tier (LOW, MEDIUM, HIGH)', 'MEDIUM')
+  .option('-p, --pool <address>', 'Pool address', '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640')
   .action(async (options) => {
     try {
       const params: AddLiquidityParams = {
@@ -36,9 +37,12 @@ program
         amount: options.amount,
         priceLower: Number(options.lower),
         priceUpper: Number(options.upper),
+        poolAddress: options.pool,
       };
       const result = await addLiquidity(params);
-      logger.info('Position Created', { tokenId: result.tokenId?.toString() });
+      logger.info('Position Created', { 
+        tokenId: result?.events?.[0]?.args?.tokenId?.toString() 
+      });
     } catch (error) {
       logger.error('Failed to add liquidity', { error: (error as Error).message });
     }
@@ -53,7 +57,7 @@ program
       const status = await monitorPosition(Number(options.id), WETH, USDC);
       logger.info('Position Status', { status });
     } catch (error) {
-      logger.error('Failed to monitor position', { error });
+      logger.error('Failed to monitor position', { error: (error as Error).message });
     }
   });
 
@@ -71,9 +75,9 @@ program
         newPriceUpper: Number(options.upper),
         slippageTolerance: Number(options.slippage),
       });
-      logger.info('Range Adjusted Successfully');
+      logger.info('Range Adjusted Successfully', { status: 'complete' });
     } catch (error) {
-      logger.error('Failed to adjust range', { error });
+      logger.error('Failed to adjust range', { error: (error as Error).message });
     }
   });
 
@@ -89,9 +93,9 @@ program
         percentageToWithdraw: Number(options.percentage),
         collectFees: options.fees,
       });
-      logger.info('Withdrawal Successful');
+      logger.info('Withdrawal Successful', { status: 'complete' });
     } catch (error) {
-      logger.error('Failed to withdraw', { error });
+      logger.error('Failed to withdraw', { error: (error as Error).message });
     }
   });
 
