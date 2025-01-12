@@ -1,7 +1,7 @@
 {
-  "name": "tech-challenge-sushi",
+  "name": "univ3-positions-manager",
   "version": "1.0.0",
-  "description": "Technical challenge for SushiSwap V3 liquidity management for the RatherLabs",
+  "description": "Technical challenge solution original conceived for SushiswapV3 positions management for RatherLabs",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -15,7 +15,11 @@
     "DeFi",
     "liquidity-management",
     "smart-contracts",
-    "RatherLabs"
+    "RatherLabs",
+    "UniswapV3-SDK",
+    "Ethereum",
+    "Sepolia",
+    "liquidity-pools"
   ],
   "author": "Sebastian Ingberg",
   "license": "MIT",
