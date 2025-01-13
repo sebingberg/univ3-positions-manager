@@ -14,7 +14,7 @@ import { Command } from 'commander';
 
 import { addLiquidity, AddLiquidityParams } from './addLiquidity.js';
 import { adjustRange } from './adjustRange.js';
-import { monitorPosition } from './monitorPosition.js';
+import { formatPositionStatus, monitorPosition } from './monitorPosition.js';
 import { FEE_TIERS, POOL_ADDRESS, USDC, WETH } from './utils/constants.js';
 import { logger } from './utils/logger.js';
 import { withdrawLiquidity } from './withdrawLiquidity.js';
@@ -66,12 +66,12 @@ program
 
 program
   .command('monitor')
-  .description('Monitor existing position')
+  .description('Monitor an existing position')
   .requiredOption('-i, --id <tokenId>', 'Position token ID')
   .action(async (options) => {
     try {
       const status = await monitorPosition(Number(options.id), WETH, USDC);
-      logger.info('Position Status', { status });
+      console.log(formatPositionStatus(status, WETH, USDC));
     } catch (error) {
       logger.error('Failed to monitor position', {
         error: (error as Error).message,

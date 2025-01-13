@@ -25,6 +25,8 @@ describe('Monitor Position [scripts/monitorPosition.ts]', () => {
       tokensOwed0: 100n,
       tokensOwed1: 200n,
       currentPrice: 1800,
+      lowerPrice: 1750,
+      upperPrice: 1850,
     };
 
     const formatted = formatPositionStatus(status, WETH, USDC);
