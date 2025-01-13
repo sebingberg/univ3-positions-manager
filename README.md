@@ -10,8 +10,8 @@ A TypeScript CLI tool for managing Uniswap V3 liquidity positions on Sepolia tes
 - Comprehensive error handling and logging
 
 ## Prerequisites
-- Node.js >= 18 (tested with LTS v20.11.0)
-- pnpm (tested with v9.1.0)
+- Node.js >= 20 (tested with LTS v20.18.1)
+- pnpm (tested with v9.15.3)
 - A Sepolia testnet wallet with Sepolia ETH and tokens (along with its private key)
 - Infura/Alchemy API key (or you can use a public RPC URL)
 - See the end of the README for more details on how to set up a Sepolia testnet wallet
