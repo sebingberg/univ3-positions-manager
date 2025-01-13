@@ -45,6 +45,7 @@ interface PositionStatus {
   currentPrice: number;
   lowerPrice: number;
   upperPrice: number;
+  feeTier: number;
 }
 
 export async function monitorPosition(
@@ -86,14 +87,15 @@ export async function monitorPosition(
 
     return {
       tokenId,
-      liquidity: position.liquidity,
-      feeGrowthInside0: position.feeGrowthInside0LastX128,
-      feeGrowthInside1: position.feeGrowthInside1LastX128,
-      tokensOwed0: position.tokensOwed0,
-      tokensOwed1: position.tokensOwed1,
+      liquidity: BigInt(position.liquidity),
+      feeGrowthInside0: BigInt(position.feeGrowthInside0LastX128),
+      feeGrowthInside1: BigInt(position.feeGrowthInside1LastX128),
+      tokensOwed0: BigInt(position.tokensOwed0),
+      tokensOwed1: BigInt(position.tokensOwed1),
       currentPrice,
       lowerPrice,
       upperPrice,
+      feeTier: Number(position.fee),
     };
   } catch (error) {
     logger.error('Failed to monitor position', {
@@ -143,6 +145,7 @@ export function formatPositionStatus(
 Position Status for Token ID: ${status.tokenId}
 ----------------------------------------
 Current Pool Price: ${status.currentPrice.toLocaleString()} ${quoteToken.symbol} per ${baseToken.symbol}
+Fee Tier: ${status.feeTier / 10000}% (${status.feeTier} bps)
 
 Your Position:
 - Price Range: ${Math.min(status.lowerPrice, status.upperPrice).toLocaleString()} to ${Math.max(status.lowerPrice, status.upperPrice).toLocaleString()} ${quoteToken.symbol} per ${baseToken.symbol}
