@@ -23,7 +23,7 @@
 
 import { AddLiquidityParams } from '../addLiquidity.js';
 import { AdjustRangeParams } from '../adjustRange.js';
-import { FEE_TIERS, POOL_ADDRESS } from './constants.js';
+import { FEE_TIERS } from './constants.js';
 import { validatePriceRange } from './price.js';
 
 /**
@@ -32,24 +32,42 @@ import { validatePriceRange } from './price.js';
  * @throws Error if any parameter is invalid
  */
 export function validateAddLiquidityParams(params: AddLiquidityParams): void {
+  // Validate tokens
   if (!params.tokenA || !params.tokenB) {
-    throw new Error('Both tokens must be provided');
+    throw new Error('Both tokens must be specified');
   }
-
   if (params.tokenA.address === params.tokenB.address) {
     throw new Error('Tokens must be different');
   }
 
+  // Validate fee tier
   if (!Object.values(FEE_TIERS).includes(params.fee)) {
-    throw new Error('Invalid fee tier');
+    throw new Error(
+      `Invalid fee tier. Must be one of: ${Object.values(FEE_TIERS).join(', ')}`,
+    );
   }
 
-  if (parseFloat(params.amount) <= 0) {
-    throw new Error('Amount must be positive');
+  // Validate amount
+  const amount = Number(params.amount);
+  if (isNaN(amount) || amount <= 0) {
+    throw new Error('Amount must be a positive number');
   }
 
-  validatePriceRange(params.priceLower, params.priceUpper);
-  validatePoolAddress(params.poolAddress || POOL_ADDRESS);
+  // Validate price range
+  if (!params.priceLower || !params.priceUpper) {
+    throw new Error('Price range must be specified');
+  }
+  if (params.priceLower >= params.priceUpper) {
+    throw new Error('Lower price must be less than upper price');
+  }
+  if (params.priceLower <= 0 || params.priceUpper <= 0) {
+    throw new Error('Prices must be greater than 0');
+  }
+
+  // Validate pool address if provided
+  if (params.poolAddress && !params.poolAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+    throw new Error('Invalid pool address format');
+  }
 }
 
 /**
@@ -68,16 +86,5 @@ export function validateAdjustRangeParams(params: AdjustRangeParams): void {
     if (params.slippageTolerance <= 0 || params.slippageTolerance >= 100) {
       throw new Error('Slippage tolerance must be between 0 and 100');
     }
-  }
-}
-
-/**
- * @dev Validates Ethereum address (eg: '0x___') format for pools
- * @param address Pool address to validate
- * @throws Error if address format is invalid
- */
-function validatePoolAddress(address: string): void {
-  if (!address.match(/^0x[a-fA-F0-9]{40}$/)) {
-    throw new Error('Invalid pool address format');
   }
 }
