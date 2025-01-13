@@ -28,9 +28,14 @@
 
 import { Token } from '@uniswap/sdk-core';
 import { Pool } from '@uniswap/v3-sdk';
-import { config } from 'dotenv';
 import { ethers } from 'ethers';
 
+import {
+  ERC20_ABI,
+  POOL_ABI,
+  POSITION_MANAGER_ABI,
+  Slot0Data,
+} from './utils/abis.js';
 import {
   FEE_TIERS,
   NFT_POSITION_MANAGER,
@@ -46,8 +51,6 @@ import {
 import { priceToTick } from './utils/price.js';
 import { validateAddLiquidityParams } from './utils/validation.js';
 
-config();
-
 export interface AddLiquidityParams {
   tokenA: Token;
   tokenB: Token;
@@ -55,62 +58,50 @@ export interface AddLiquidityParams {
   amount: string;
   priceLower: number;
   priceUpper: number;
-  poolAddress?: string; // ! Optional: Override default pool address from constants
+  poolAddress?: string;
 }
 
 export async function addLiquidity(
   params: AddLiquidityParams,
-): Promise<ethers.ContractTransactionReceipt> {
-  // ! Validate all input parameters first
-  validateAddLiquidityParams(params);
-
+): Promise<ethers.ContractTransactionReceipt | null> {
   return await withErrorHandling(
     async () => {
-      // * Log the operation start
-      logger.info('Adding Liquidity', {
-        tokenA: params.tokenA.symbol,
-        tokenB: params.tokenB.symbol,
-        amount: params.amount,
-      });
+      validateAddLiquidityParams(params);
 
-      // * Initialize provider and wallet using ethers v6 syntax
       const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
       const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 
-      // * Configure pool parameters
-      const tokenA = params.tokenA;
-      const tokenB = params.tokenB;
-
-      // ! Get pool contract and fetch current state
+      // Initialize contracts with centralized ABIs
       const poolContract = new ethers.Contract(
-        params.poolAddress || POOL_ADDRESS, // Use provided pool address or default
-        [
-          'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, ...)',
-        ],
+        params.poolAddress || POOL_ADDRESS,
+        POOL_ABI,
         provider,
       );
 
-      // Add type assertion or runtime check
-      if (!poolContract.slot0) {
-        throw new Error('Pool contract slot0 method not found');
-      }
-      const { sqrtPriceX96, tick } = await poolContract.slot0();
+      const slot0 = (await poolContract.slot0()) as Slot0Data;
 
-      // * Initialize pool instance
-      const pool = new Pool(
-        tokenA,
-        tokenB,
-        params.fee,
-        sqrtPriceX96.toString(),
-        0, // Initial liquidity
-        tick,
+      // Convert prices to ticks
+      const tickLower = priceToTick(
+        params.priceLower,
+        params.tokenA,
+        params.tokenB,
+      );
+      const tickUpper = priceToTick(
+        params.priceUpper,
+        params.tokenA,
+        params.tokenB,
       );
 
-      // * Calculate position parameters
-      const tickLower = priceToTick(params.priceLower, tokenA, tokenB);
-      const tickUpper = priceToTick(params.priceUpper, tokenA, tokenB);
+      // Calculate optimal amounts
+      const pool = new Pool(
+        params.tokenA,
+        params.tokenB,
+        params.fee,
+        slot0.sqrtPriceX96.toString(),
+        '0', // We don't need liquidity for amount calculation
+        slot0.tick,
+      );
 
-      // ! Calculate optimal amounts based on desired liquidity
       const { amount0, amount1 } = calculateOptimalAmounts(
         pool,
         tickLower,
@@ -118,52 +109,52 @@ export async function addLiquidity(
         params.amount,
       );
 
-      // * Calculate minimum amounts with slippage protection
+      // Calculate minimum amounts with slippage protection
       const { amount0Min, amount1Min } = calculateMinimumAmounts(
         amount0,
         amount1,
         SLIPPAGE_TOLERANCE,
       );
 
-      // ! Approve tokens for position manager
+      // Approve tokens
       const tokenAContract = new ethers.Contract(
-        tokenA.address,
-        ['function approve(address, uint256)'],
+        params.tokenA.address,
+        ERC20_ABI,
         wallet,
       );
       const tokenBContract = new ethers.Contract(
-        tokenB.address,
-        ['function approve(address, uint256)'],
+        params.tokenB.address,
+        ERC20_ABI,
         wallet,
       );
 
-      console.log('Approving tokens...');
-      // Add type assertions or runtime checks
-      if (!tokenAContract.approve || !tokenBContract.approve) {
-        throw new Error('Token contract approve method not found');
-      }
+      logger.info('Approving tokens...', {
+        tokenA: params.tokenA.address,
+        tokenB: params.tokenB.address,
+      });
+
       await tokenAContract.approve(NFT_POSITION_MANAGER, ethers.MaxUint256);
       await tokenBContract.approve(NFT_POSITION_MANAGER, ethers.MaxUint256);
 
-      // ! Create position using NonFungiblePositionManager
+      // Create position
       const positionManager = new ethers.Contract(
         NFT_POSITION_MANAGER,
-        [
-          'function mint((address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline)) returns (uint256 tokenId, uint256 amount0, uint256 amount1)',
-        ],
+        POSITION_MANAGER_ABI,
         wallet,
       );
 
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600); // 10 minutes
 
-      console.log('Adding liquidity...');
-      // Add type assertion or runtime check
-      if (!positionManager.mint) {
-        throw new Error('Position manager mint method not found');
-      }
+      logger.info('Adding liquidity...', {
+        tickLower,
+        tickUpper,
+        amount0: amount0.toString(),
+        amount1: amount1.toString(),
+      });
+
       const tx = await positionManager.mint({
-        token0: tokenA.address,
-        token1: tokenB.address,
+        token0: params.tokenA.address,
+        token1: params.tokenB.address,
         fee: params.fee,
         tickLower,
         tickUpper,

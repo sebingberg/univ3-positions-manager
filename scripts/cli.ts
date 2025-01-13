@@ -58,17 +58,23 @@ program
 
 program
   .command('monitor')
-  .description('Monitor an existing position')
+  .description('Monitor a liquidity position')
   .requiredOption('-i, --id <tokenId>', 'Position token ID')
   .action(async (options) => {
     try {
-      const status = await monitorPosition(Number(options.id), WETH, USDC);
+      const tokenId = parseInt(options.id);
+      if (isNaN(tokenId)) {
+        throw new Error('Invalid token ID format');
+      }
+
+      const status = await monitorPosition(tokenId, WETH, USDC);
       console.log(formatPositionStatus(status, WETH, USDC));
     } catch (error) {
       logger.error('Failed to monitor position', {
-        error: (error as Error).message,
+        error: error instanceof Error ? error.message : String(error),
         tokenId: options.id,
       });
+      process.exit(1);
     }
   });
 
