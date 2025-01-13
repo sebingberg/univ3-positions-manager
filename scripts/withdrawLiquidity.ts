@@ -26,104 +26,76 @@
 
 import { ethers } from 'ethers';
 
+import { POSITION_MANAGER_ABI, PositionInfo } from './utils/abis.js';
 import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants.js';
 import { withErrorHandling } from './utils/errorHandler.js';
 import { logger } from './utils/logger.js';
 
-// * Configuration options for withdrawal process
 interface WithdrawOptions {
-  percentageToWithdraw?: number; // * Percentage of liquidity to withdraw from position (1-100)
-  collectFees?: boolean; // * Whether to collect accumulated fees
+  percentageToWithdraw?: number;
+  collectFees?: boolean;
 }
 
-/**
- * ! Main function to withdraw liquidity from a position
- * @param tokenId The NFT token ID of the position
- * @param options Configuration for the withdrawal process
- */
-async function withdrawLiquidity(
+export async function withdrawLiquidity(
   tokenId: number,
   options: WithdrawOptions = { percentageToWithdraw: 100, collectFees: true },
-) {
+): Promise<boolean> {
   return await withErrorHandling(
     async () => {
-      // * Log withdrawal start
       logger.info('Withdrawing Liquidity', {
         tokenId,
         percentage: options.percentageToWithdraw,
         collectFees: options.collectFees,
       });
 
-      // * Initialize provider and signer
       const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
       const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 
-      // ! Initialize position manager contract with required method signatures
       const positionManager = new ethers.Contract(
         NFT_POSITION_MANAGER,
-        [
-          // * Contract function to query position details
-          'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
-          // * Contract function to remove liquidity
-          'function decreaseLiquidity(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline) external returns (uint256 amount0, uint256 amount1)',
-          // * Contract function to collect fees and withdrawn tokens
-          'function collect(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) external returns (uint128 amount0, uint128 amount1)',
-        ],
+        POSITION_MANAGER_ABI,
         wallet,
-      ) as ethers.Contract & {
-        positions: (tokenId: number) => Promise<any>;
-        decreaseLiquidity: (
-          tokenId: number,
-          liquidity: bigint,
-          amount0Min: number,
-          amount1Min: number,
-          deadline: bigint,
-        ) => Promise<any>;
-        collect: (
-          tokenId: number,
-          recipient: string,
-          amount0Max: bigint,
-          amount1Max: bigint,
-        ) => Promise<any>;
-      };
+      );
 
-      // * Fetch current position state
-      const position = await positionManager.positions(tokenId);
+      const position = (await positionManager.positions(
+        tokenId,
+      )) as PositionInfo;
 
-      // * Calculate amount of liquidity to withdraw based on percentage
       const liquidityToWithdraw =
         (BigInt(position.liquidity) * BigInt(options.percentageToWithdraw!)) /
         100n;
 
-      // ! Step 1: Decrease liquidity if requested
       if (liquidityToWithdraw > 0n) {
-        console.log(
-          `Withdrawing ${options.percentageToWithdraw}% of liquidity...`,
-        );
-        // * Set deadline 10 minutes in the future
+        logger.info('Withdrawing liquidity...', {
+          tokenId,
+          percentage: options.percentageToWithdraw,
+          liquidity: liquidityToWithdraw.toString(),
+        });
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
-        // TODO: Add slippage protection by calculating amount0Min and amount1Min
-        const tx = await positionManager.decreaseLiquidity(
+        const decreaseTx = await positionManager.decreaseLiquidity({
           tokenId,
-          liquidityToWithdraw,
-          0, // amount0Min
-          0, // amount1Min
+          liquidity: liquidityToWithdraw,
+          amount0Min: 0, // TODO: Add slippage protection
+          amount1Min: 0,
           deadline,
-        );
-        await tx.wait();
+        });
+        await decreaseTx.wait();
       }
 
-      // ! Step 2: Collect fees and withdrawn tokens
       if (options.collectFees) {
-        console.log('Collecting fees and withdrawn tokens...');
-        const tx = await positionManager.collect(
+        logger.info('Collecting fees and withdrawn tokens...', {
           tokenId,
-          wallet.address,
-          MaxUint128, // * Collect all available token0
-          MaxUint128, // * Collect all available token1
-        );
-        const receipt = await tx.wait();
+          maxAmount0: MaxUint128.toString(),
+          maxAmount1: MaxUint128.toString(),
+        });
+        const collectTx = await positionManager.collect({
+          tokenId,
+          recipient: wallet.address,
+          amount0Max: MaxUint128,
+          amount1Max: MaxUint128,
+        });
+        const receipt = await collectTx.wait();
         await logger.logTransaction('Liquidity Withdrawn', receipt, {
           tokenId,
           percentage: options.percentageToWithdraw,
@@ -139,5 +111,3 @@ async function withdrawLiquidity(
     },
   );
 }
-
-export { withdrawLiquidity, WithdrawOptions };
