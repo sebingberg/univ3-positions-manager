@@ -1,23 +1,17 @@
 {
-    "compilerOptions": {
-      "target": "ES2021",
-      "module": "CommonJS",
-      "strict": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "outDir": "dist",
-      "noImplicitAny": true,
-      "strictNullChecks": true,
-      "strictFunctionTypes": true,
-      "strictBindCallApply": true,
-      "noUnusedLocals": true,
-      "noUnusedParameters": true,
-      "exactOptionalPropertyTypes": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true,
-      "noUncheckedIndexedAccess": true,
-      "allowUnreachableCode": false
-    },
-    "include": ["scripts/**/*", "tests/**/*"]
-  }
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "noEmit": true
+  },
+  "include": ["scripts/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
