@@ -21,6 +21,9 @@
 import { Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, TickMath, tickToPrice } from '@uniswap/v3-sdk';
 
+const MIN_TICK = -887272;
+const MAX_TICK = 887272;
+
 /**
  * ! Critical function for converting price to corresponding pool tick
  * @param price The desired price point (e.g., 1800 for 1 ETH = 1800 USDC)
@@ -63,8 +66,23 @@ export function tickToTokenPrice(
   baseToken: Token,
   quoteToken: Token,
 ): number {
-  const priceObject = tickToPrice(baseToken, quoteToken, tick);
-  return parseFloat(priceObject.toSignificant(8));
+  if (!Number.isInteger(tick)) {
+    throw new Error(`Invalid tick value: ${tick} (must be an integer)`);
+  }
+  if (tick < MIN_TICK || tick > MAX_TICK) {
+    throw new Error(
+      `Tick out of range: ${tick} (must be between ${MIN_TICK} and ${MAX_TICK})`,
+    );
+  }
+
+  try {
+    const priceObject = tickToPrice(baseToken, quoteToken, tick);
+    return parseFloat(priceObject.toSignificant(8));
+  } catch (error) {
+    throw new Error(
+      `Failed to convert tick ${tick} to price: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 /**
