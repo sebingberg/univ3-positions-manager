@@ -175,4 +175,49 @@ program
     }
   });
 
+program
+  .command('approve')
+  .description('Approve token spending for Position Manager')
+  .requiredOption('-t, --token <token>', 'Token to approve (WETH or USDC)')
+  .requiredOption(
+    '-s, --spender <address>',
+    'Spender address (Position Manager)',
+  )
+  .action(async (options) => {
+    try {
+      const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+
+      const token = options.token === 'WETH' ? WETH : USDC;
+      const tokenContract = new ethers.Contract(
+        token.address,
+        ERC20_ABI,
+        wallet, // Note: using wallet here for signing
+      );
+
+      const tx = await tokenContract.approve(
+        options.spender,
+        ethers.MaxUint256,
+      );
+
+      logger.info('Approval transaction sent', {
+        token: options.token,
+        spender: options.spender,
+        txHash: tx.hash,
+      });
+
+      const receipt = await tx.wait();
+      logger.info('Approval confirmed', {
+        token: options.token,
+        spender: options.spender,
+        blockNumber: receipt.blockNumber,
+      });
+    } catch (error) {
+      logger.error('Failed to approve token', {
+        error: (error as Error).message,
+        token: options.token,
+      });
+    }
+  });
+
 program.parse();
