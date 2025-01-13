@@ -12,12 +12,12 @@
 
 import { Command } from 'commander';
 
-import { addLiquidity, AddLiquidityParams } from './addLiquidity';
-import { adjustRange } from './adjustRange';
-import { monitorPosition } from './monitorPosition';
-import { FEE_TIERS, POOL_ADDRESS, USDC, WETH } from './utils/constants';
-import { logger } from './utils/logger';
-import { withdrawLiquidity } from './withdrawLiquidity';
+import { addLiquidity, AddLiquidityParams } from './addLiquidity.js';
+import { adjustRange } from './adjustRange.js';
+import { monitorPosition } from './monitorPosition.js';
+import { FEE_TIERS, POOL_ADDRESS, USDC, WETH } from './utils/constants.js';
+import { logger } from './utils/logger.js';
+import { withdrawLiquidity } from './withdrawLiquidity.js';
 
 const program = new Command();
 
@@ -52,7 +52,7 @@ program
       const result = await addLiquidity(params);
       logger.info('Liquidity Added to Position', {
         tokenId: options.id,
-        addedLiquidity: result?.events?.[0]?.args?.liquidity?.toString(),
+        addedLiquidity: result.logs?.[0]?.topics?.[1],
         params,
       });
     } catch (error) {

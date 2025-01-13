@@ -58,10 +58,10 @@ export const NFT_POSITION_MANAGER = process.env.NFT_POSITION_MANAGER!;
 
 // Other constants remain the same
 export const FEE_TIERS = {
-  LOW: 500, // 0.05% or 500 bp
-  MEDIUM: 3000, // 0.3% or 3000 bp
-  HIGH: 10000, // 1% or 10000 bp
-} as const;
+  LOW: 500,
+  MEDIUM: 3000,
+  HIGH: 10000,
+} as const satisfies Record<string, 500 | 3000 | 10000>;
 
 export const SLIPPAGE_TOLERANCE = 0.5; // 0.5%
 

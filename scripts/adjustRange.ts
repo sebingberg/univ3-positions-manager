@@ -24,11 +24,11 @@
 import { Token } from '@uniswap/sdk-core';
 import { ethers } from 'ethers';
 
-import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants';
-import { withErrorHandling } from './utils/errorHandler';
-import { logger } from './utils/logger';
-import { priceToTick } from './utils/price';
-import { validateAdjustRangeParams } from './utils/validation';
+import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants.js';
+import { withErrorHandling } from './utils/errorHandler.js';
+import { logger } from './utils/logger.js';
+import { priceToTick } from './utils/price.js';
+import { validateAdjustRangeParams } from './utils/validation.js';
 
 interface AdjustRangeParams {
   newPriceLower: number;

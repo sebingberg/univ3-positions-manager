@@ -26,9 +26,9 @@
 
 import { ethers } from 'ethers';
 
-import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants';
-import { withErrorHandling } from './utils/errorHandler';
-import { logger } from './utils/logger';
+import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants.js';
+import { withErrorHandling } from './utils/errorHandler.js';
+import { logger } from './utils/logger.js';
 
 // * Configuration options for withdrawal process
 interface WithdrawOptions {

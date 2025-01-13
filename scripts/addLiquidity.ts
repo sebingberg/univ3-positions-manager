@@ -32,32 +32,35 @@ import { config } from 'dotenv';
 import { ethers } from 'ethers';
 
 import {
+  FEE_TIERS,
   NFT_POSITION_MANAGER,
   POOL_ADDRESS,
   SLIPPAGE_TOLERANCE,
-} from './utils/constants';
-import { withErrorHandling } from './utils/errorHandler';
-import { logger } from './utils/logger';
+} from './utils/constants.js';
+import { withErrorHandling } from './utils/errorHandler.js';
+import { logger } from './utils/logger.js';
 import {
   calculateMinimumAmounts,
   calculateOptimalAmounts,
-} from './utils/position';
-import { priceToTick } from './utils/price';
-import { validateAddLiquidityParams } from './utils/validation';
+} from './utils/position.js';
+import { priceToTick } from './utils/price.js';
+import { validateAddLiquidityParams } from './utils/validation.js';
 
 config();
 
 export interface AddLiquidityParams {
   tokenA: Token;
   tokenB: Token;
-  fee: number;
+  fee: (typeof FEE_TIERS)[keyof typeof FEE_TIERS];
   amount: string;
   priceLower: number;
   priceUpper: number;
   poolAddress?: string; // ! Optional: Override default pool address from constants
 }
 
-export async function addLiquidity(params: AddLiquidityParams) {
+export async function addLiquidity(
+  params: AddLiquidityParams,
+): Promise<ethers.ContractTransactionReceipt> {
   // ! Validate all input parameters first
   validateAddLiquidityParams(params);
 

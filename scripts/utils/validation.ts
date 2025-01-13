@@ -21,17 +21,17 @@
  * * Note: Throws descriptive errors for invalid inputs
  */
 
-import { AddLiquidityParams } from '../addLiquidity';
-import { AdjustRangeParams } from '../adjustRange';
-import { FEE_TIERS, POOL_ADDRESS } from './constants';
-import { validatePriceRange } from './price';
+import { AddLiquidityParams } from '../addLiquidity.js';
+import { AdjustRangeParams } from '../adjustRange.js';
+import { FEE_TIERS, POOL_ADDRESS } from './constants.js';
+import { validatePriceRange } from './price.js';
 
 /**
  * @dev Validates parameters for adding liquidity
  * @param params Parameters to validate
  * @throws Error if any parameter is invalid
  */
-export function validateAddLiquidityParams(params: AddLiquidityParams) {
+export function validateAddLiquidityParams(params: AddLiquidityParams): void {
   if (!params.tokenA || !params.tokenB) {
     throw new Error('Both tokens must be provided');
   }
@@ -57,7 +57,7 @@ export function validateAddLiquidityParams(params: AddLiquidityParams) {
  * @param params Parameters to validate
  * @throws Error if any parameter is invalid
  */
-export function validateAdjustRangeParams(params: AdjustRangeParams) {
+export function validateAdjustRangeParams(params: AdjustRangeParams): void {
   if (!params.newPriceLower || !params.newPriceUpper) {
     throw new Error('Price range must be specified');
   }
@@ -76,7 +76,7 @@ export function validateAdjustRangeParams(params: AdjustRangeParams) {
  * @param address Pool address to validate
  * @throws Error if address format is invalid
  */
-function validatePoolAddress(address: string) {
+function validatePoolAddress(address: string): void {
   if (!address.match(/^0x[a-fA-F0-9]{40}$/)) {
     throw new Error('Invalid pool address format');
   }
