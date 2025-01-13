@@ -27,36 +27,30 @@
  */
 
 import { Token } from '@uniswap/sdk-core';
-import { config } from 'dotenv';
-
-config();
 
 // Network
-export const CHAIN_ID = Number(process.env.CHAIN_ID);
-export const NETWORK_NAME = process.env.NETWORK_NAME;
+export const CHAIN_ID = 11155111; // Sepolia
+export const NETWORK_NAME = 'sepolia';
+
+// Contract Addresses
+export const WETH_ADDRESS = '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9';
+export const USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
+export const POOL_ADDRESS = '0x3289680dD4d6C10bb19b899729cda5eEF58AEfF1'; // The pool contract address in the provided Network where you created your liquidity position (Sepolia USDC/WETH pool provided as an example)
+export const NFT_POSITION_MANAGER =
+  '0x1238536071E1c677A632429e3655c799b22cDA52'; // The Uniswap V3 Positions NFT contract address in the provided Network that mints and burns NFT Liquidity positions (Sepolia Uniswap V3 Positions NFT-V1 provided as an example)
 
 // Tokens
 export const WETH = new Token(
   CHAIN_ID,
-  process.env.WETH_ADDRESS!,
+  WETH_ADDRESS,
   18,
   'WETH',
   'Wrapped Ether',
 );
 
-export const USDC = new Token(
-  CHAIN_ID,
-  process.env.USDC_ADDRESS!,
-  6,
-  'USDC',
-  'USD Coin',
-);
+export const USDC = new Token(CHAIN_ID, USDC_ADDRESS, 6, 'USDC', 'USD Coin');
 
-// Uniswap
-export const POOL_ADDRESS = process.env.POOL_ADDRESS!;
-export const NFT_POSITION_MANAGER = process.env.NFT_POSITION_MANAGER!;
-
-// Other constants remain the same
+// Fee tiers
 export const FEE_TIERS = {
   LOW: 500,
   MEDIUM: 3000,
