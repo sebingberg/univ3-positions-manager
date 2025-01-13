@@ -33,6 +33,33 @@ pnpm build
 # Run CLI
 pnpm cli --help
 ```
+### Before Adding Liquidity
+First, check token allowances for the Position Manager:
+```bash
+# Check WETH allowance
+pnpm cli check-allowance \
+  --token WETH \
+  --spender 0x1238536071E1c677A632429e3655c799b22cDA52
+
+# Check USDC allowance
+pnpm cli check-allowance \
+  --token USDC \
+  --spender 0x1238536071E1c677A632429e3655c799b22cDA52
+```
+
+If allowances are insufficient, approve tokens:
+```bash
+# Approve WETH
+pnpm cli approve \
+  --token WETH \
+  --spender 0x1238536071E1c677A632429e3655c799b22cDA52
+
+# Approve USDC
+pnpm cli approve \
+  --token USDC \
+  --spender 0x1238536071E1c677A632429e3655c799b22cDA52
+```
+Note: The address provided in this example is the Uniswap V3 Position Manager for Sepolia Testnet
 
 ### Add Liquidity to Position
 ```bash
