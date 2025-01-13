@@ -31,8 +31,8 @@ interface LogEntry {
   timestamp: string;
   level: LogLevel;
   operation: string;
-  details: any;
-  txHash?: string | undefined;
+  details: Record<string, unknown>;
+  txHash?: string;
 }
 
 /**
@@ -49,7 +49,12 @@ class Logger {
    * @param details Additional information about the operation
    * @param txHash Optional transaction hash for blockchain operations
    */
-  log(level: LogLevel, operation: string, details: any, txHash?: string) {
+  log(
+    level: LogLevel,
+    operation: string,
+    details: Record<string, unknown>,
+    txHash?: string,
+  ): void {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -66,27 +71,27 @@ class Logger {
     console.log('Details:', details);
   }
 
-  debug(operation: string, details: any) {
+  debug(operation: string, details: Record<string, unknown>): void {
     this.log('debug', operation, details);
   }
 
-  info(operation: string, details: any) {
+  info(operation: string, details: Record<string, unknown>): void {
     this.log('info', operation, details);
   }
 
-  warn(operation: string, details: any) {
+  warn(operation: string, details: Record<string, unknown>): void {
     this.log('warn', operation, details);
   }
 
-  error(operation: string, details: any) {
+  error(operation: string, details: Record<string, unknown>): void {
     this.log('error', operation, details);
   }
 
   async logTransaction(
     operation: string,
     receipt: TransactionReceipt,
-    details: any,
-  ) {
+    details: Record<string, unknown>,
+  ): Promise<void> {
     this.log('info', operation, details, receipt.hash);
   }
 
