@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "check": "pnpm type-check && pnpm lint && pnpm format:check",
-    "cli": "node --loader ts-node/esm scripts/cli.ts",
+    "cli": "NODE_NO_WARNINGS=1 NODE_OPTIONS=\"--loader ts-node/esm\" ts-node --esm scripts/cli.ts",
     "format": "prettier --write \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "format:check": "prettier --check \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "lint": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\"",
