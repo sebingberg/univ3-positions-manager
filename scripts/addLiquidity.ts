@@ -68,10 +68,17 @@ export async function addLiquidity(
     async () => {
       validateAddLiquidityParams(params);
 
+      // Ensure token ordering matches Uniswap's requirements
+      const [token0, token1] =
+        params.tokenA.address.toLowerCase() <
+        params.tokenB.address.toLowerCase()
+          ? [params.tokenA, params.tokenB]
+          : [params.tokenB, params.tokenA];
+
       const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
       const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 
-      // Initialize contracts with centralized ABIs
+      // Initialize pool contract
       const poolContract = new ethers.Contract(
         params.poolAddress || POOL_ADDRESS,
         POOL_ABI,
@@ -153,8 +160,8 @@ export async function addLiquidity(
       });
 
       const tx = await positionManager.mint({
-        token0: params.tokenA.address,
-        token1: params.tokenB.address,
+        token0: token0.address,
+        token1: token1.address,
         fee: params.fee,
         tickLower,
         tickUpper,
