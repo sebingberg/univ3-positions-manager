@@ -24,30 +24,29 @@
 import { Token } from '@uniswap/sdk-core';
 import { ethers } from 'ethers';
 
+import { POSITION_MANAGER_ABI, PositionInfo } from './utils/abis.js';
 import { MaxUint128, NFT_POSITION_MANAGER } from './utils/constants.js';
 import { withErrorHandling } from './utils/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { priceToTick } from './utils/price.js';
 import { validateAdjustRangeParams } from './utils/validation.js';
 
-interface AdjustRangeParams {
+export interface AdjustRangeParams {
   newPriceLower: number;
   newPriceUpper: number;
   slippageTolerance?: number;
 }
 
-async function adjustRange(
+export async function adjustRange(
   tokenId: number,
   baseToken: Token,
   quoteToken: Token,
   params: AdjustRangeParams,
-) {
-  // ! Validate adjustment parameters
+): Promise<ethers.ContractTransactionReceipt | null> {
   validateAdjustRangeParams(params);
 
   return await withErrorHandling(
     async () => {
-      // * Log range adjustment start
       logger.info('Adjusting Position Range', {
         tokenId,
         newRange: `${params.newPriceLower}-${params.newPriceUpper}`,
@@ -56,50 +55,18 @@ async function adjustRange(
       const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
       const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 
-      // ! Initialize position manager contract with required method signatures
       const positionManager = new ethers.Contract(
         NFT_POSITION_MANAGER,
-        [
-          'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
-          'function decreaseLiquidity(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline) external returns (uint256 amount0, uint256 amount1)',
-          'function collect(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) external returns (uint128 amount0, uint128 amount1)',
-          'function mint(address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 amount0Desired, uint128 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline) external returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)',
-        ],
+        POSITION_MANAGER_ABI,
         wallet,
-      ) as ethers.Contract & {
-        positions: (tokenId: number) => Promise<any>;
-        decreaseLiquidity: (
-          tokenId: number,
-          liquidity: bigint,
-          amount0Min: number,
-          amount1Min: number,
-          deadline: bigint,
-        ) => Promise<any>;
-        collect: (
-          tokenId: number,
-          recipient: string,
-          amount0Max: bigint,
-          amount1Max: bigint,
-        ) => Promise<any>;
-        mint: (
-          token0: string,
-          token1: string,
-          fee: number,
-          tickLower: number,
-          tickUpper: number,
-          amount0Desired: bigint,
-          amount1Desired: bigint,
-          amount0Min: number,
-          amount1Min: number,
-          recipient: string,
-          deadline: bigint,
-        ) => Promise<any>;
-      };
+      );
 
-      // * Get current position
-      const position = await positionManager.positions(tokenId);
+      // Get current position
+      const position = (await positionManager.positions(
+        tokenId,
+      )) as PositionInfo;
 
-      // * Convert new prices to ticks
+      // Calculate new ticks
       const newTickLower = priceToTick(
         params.newPriceLower,
         baseToken,
@@ -111,51 +78,64 @@ async function adjustRange(
         quoteToken,
       );
 
-      // ! Step 1: Remove all liquidity from current position
-      console.log('Removing liquidity from current position...');
+      // Step 1: Remove all liquidity from current position
+      logger.info('Removing liquidity from current position...', {
+        tokenId,
+        liquidity: position.liquidity.toString(),
+      });
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
-      await positionManager.decreaseLiquidity(
+      const removeTx = await positionManager.decreaseLiquidity({
         tokenId,
-        position.liquidity,
-        0, // TODO: Add slippage protection
-        0,
+        liquidity: position.liquidity,
+        amount0Min: 0, // TODO: Add slippage protection
+        amount1Min: 0,
         deadline,
-      );
+      });
+      await removeTx.wait();
 
-      // ! Step 2: Collect all tokens
-      console.log('Collecting withdrawn tokens...');
-      await positionManager.collect(
+      // Step 2: Collect all tokens
+      logger.info('Collecting withdrawn tokens...', {
         tokenId,
-        wallet.address,
-        MaxUint128,
-        MaxUint128,
-      );
+        maxAmount0: MaxUint128.toString(),
+        maxAmount1: MaxUint128.toString(),
+      });
+      const collectTx = await positionManager.collect({
+        tokenId,
+        recipient: wallet.address,
+        amount0Max: MaxUint128,
+        amount1Max: MaxUint128,
+      });
+      await collectTx.wait();
 
-      // ! Step 3: Create new position with collected tokens
-      console.log('Creating new position with adjusted range...');
-      const tx = await positionManager.mint(
-        position.token0,
-        position.token1,
-        position.fee,
+      // Step 3: Create new position with collected tokens
+      logger.info('Creating new position with adjusted range...', {
         newTickLower,
         newTickUpper,
-        position.amount0,
-        position.amount1,
-        0, // TODO: Add slippage protection
-        0,
-        wallet.address,
-        deadline,
-      );
+      });
 
-      const receipt = await tx.wait();
+      const mintTx = await positionManager.mint({
+        token0: position.token0,
+        token1: position.token1,
+        fee: position.fee,
+        tickLower: newTickLower,
+        tickUpper: newTickUpper,
+        amount0Desired: position.tokensOwed0,
+        amount1Desired: position.tokensOwed1,
+        amount0Min: 0, // TODO: Add slippage protection
+        amount1Min: 0,
+        recipient: wallet.address,
+        deadline,
+      });
+
+      const receipt = await mintTx.wait();
       await logger.logTransaction('Range Adjusted', receipt, {
         tokenId,
         newTickLower,
         newTickUpper,
       });
 
-      return true;
+      return receipt;
     },
     {
       operation: 'adjustRange',
@@ -164,5 +144,3 @@ async function adjustRange(
     },
   );
 }
-
-export { adjustRange, AdjustRangeParams };
