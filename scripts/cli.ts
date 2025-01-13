@@ -12,54 +12,46 @@
 
 import { Command } from 'commander';
 
-import { addLiquidity, AddLiquidityParams } from './addLiquidity.js';
+import { addLiquidity } from './addLiquidity.js';
 import { adjustRange } from './adjustRange.js';
 import { formatPositionStatus, monitorPosition } from './monitorPosition.js';
-import { FEE_TIERS, POOL_ADDRESS, USDC, WETH } from './utils/constants.js';
+import { FEE_TIERS, USDC, WETH } from './utils/constants.js';
 import { logger } from './utils/logger.js';
 import { withdrawLiquidity } from './withdrawLiquidity.js';
 
 const program = new Command();
 
 program
-  .name('univ3-manager')
+  .name('univ3-positions-manager')
   .description('CLI to manage Uniswap V3 positions')
   .version('1.0.0');
 
 program
   .command('add')
-  .description('Add liquidity to existing position')
-  // TODO: Add support for different token pairs
-  // .requiredOption('-t0, --token0 <address>', 'Token0 address')
-  // .requiredOption('-t1, --token1 <address>', 'Token1 address')
-  // Currently hardcoded to WETH/USDC pair
+  .description('Add liquidity to an existing position')
   .requiredOption('-i, --id <tokenId>', 'Position token ID')
-  .requiredOption('-a, --amount <amount>', 'Amount of ETH to provide')
-  .requiredOption('-l, --lower <price>', 'Lower price bound')
-  .requiredOption('-u, --upper <price>', 'Upper price bound')
-  .requiredOption('-f, --fee <tier>', 'Fee tier (LOW, MEDIUM, HIGH)')
+  .requiredOption('-a, --amount <amount>', 'Amount of tokens to add')
+  .requiredOption('-t, --token <token>', 'Token to add (WETH or USDC)')
   .action(async (options) => {
     try {
-      const params: AddLiquidityParams = {
-        tokenA: WETH,
-        tokenB: USDC,
-        fee: FEE_TIERS[options.fee as keyof typeof FEE_TIERS],
-        amount: options.amount,
-        priceLower: Number(options.lower),
-        priceUpper: Number(options.upper),
-        poolAddress: POOL_ADDRESS, // ! TODO: Ensure this is set in constants.ts
+      const params = {
+        tokenA: options.token === 'WETH' ? WETH : USDC,
+        tokenB: options.token === 'WETH' ? USDC : WETH,
+        fee: FEE_TIERS.MEDIUM,
+        amount: options.amount.toString(),
+        priceLower: 0,
+        priceUpper: 0,
       };
-      const result = await addLiquidity(params);
-      logger.info('Liquidity Added to Position', {
+      await addLiquidity(params);
+      logger.info('Liquidity Added Successfully', {
         tokenId: options.id,
-        addedLiquidity: result.logs?.[0]?.topics?.[1],
-        params,
+        amount: options.amount,
+        token: options.token,
       });
     } catch (error) {
-      logger.error('Failed to add liquidity to position', {
+      logger.error('Failed to add liquidity', {
         error: (error as Error).message,
         tokenId: options.id,
-        params: options,
       });
     }
   });
