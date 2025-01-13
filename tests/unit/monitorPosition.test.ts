@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   formatPositionStatus,
   monitorPosition,
-} from '../../scripts/monitorPosition';
-import { USDC, WETH } from '../../scripts/utils/constants';
+} from '../../scripts/monitorPosition.js';
+import { USDC, WETH } from '../../scripts/utils/constants.js';
 
 describe('Monitor Position [scripts/monitorPosition.ts]', () => {
   it('should return position status', async () => {

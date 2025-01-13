@@ -20,7 +20,7 @@
 import { Pool, Position } from '@uniswap/v3-sdk';
 import { ethers } from 'ethers';
 
-import { SLIPPAGE_TOLERANCE } from './constants';
+import { SLIPPAGE_TOLERANCE } from './constants.js';
 
 // * Interface representing position details from the blockchain
 export interface PositionInfo {

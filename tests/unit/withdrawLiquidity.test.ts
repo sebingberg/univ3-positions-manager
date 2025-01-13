@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { NFT_POSITION_MANAGER } from '../../scripts/utils/constants';
-import { withdrawLiquidity } from '../../scripts/withdrawLiquidity';
+import { NFT_POSITION_MANAGER } from '../../scripts/utils/constants.js';
+import { withdrawLiquidity } from '../../scripts/withdrawLiquidity.js';
 
 describe('Withdraw Liquidity [scripts/withdrawLiquidity.ts]', () => {
   it('should withdraw full position', async () => {

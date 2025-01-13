@@ -1,12 +1,12 @@
 import { Token } from '@uniswap/sdk-core';
 import { describe, expect, it } from 'vitest';
 
-import { USDC, WETH } from '../../../scripts/utils/constants';
+import { USDC, WETH } from '../../../scripts/utils/constants.js';
 import {
   priceToTick,
   tickToTokenPrice,
   validatePriceRange,
-} from '../../../scripts/utils/price';
+} from '../../../scripts/utils/price.js';
 
 describe('Price Utilities [scripts/utils/price.ts]', () => {
   describe('priceToTick()', () => {

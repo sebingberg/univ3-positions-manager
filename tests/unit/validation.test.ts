@@ -5,8 +5,8 @@ import {
   POOL_ADDRESS,
   USDC,
   WETH,
-} from '../../scripts/utils/constants';
-import { validateAddLiquidityParams } from '../../scripts/utils/validation';
+} from '../../scripts/utils/constants.js';
+import { validateAddLiquidityParams } from '../../scripts/utils/validation.js';
 
 describe('Input Validation', () => {
   it('should validate add liquidity parameters', () => {

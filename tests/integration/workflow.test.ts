@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { addLiquidity } from '../../scripts/addLiquidity';
-import { adjustRange } from '../../scripts/adjustRange';
-import { monitorPosition } from '../../scripts/monitorPosition';
+import { addLiquidity } from '../../scripts/addLiquidity.js';
+import { adjustRange } from '../../scripts/adjustRange.js';
+import { monitorPosition } from '../../scripts/monitorPosition.js';
 import {
   FEE_TIERS,
   POOL_ADDRESS,
   USDC,
   WETH,
-} from '../../scripts/utils/constants';
-import { withdrawLiquidity } from '../../scripts/withdrawLiquidity';
+} from '../../scripts/utils/constants.js';
+import { withdrawLiquidity } from '../../scripts/withdrawLiquidity.js';
 
 describe('Workflow Integration [E2E]', () => {
   it('should execute full position lifecycle', async () => {
@@ -24,9 +24,8 @@ describe('Workflow Integration [E2E]', () => {
       poolAddress: POOL_ADDRESS,
     };
     const result = await addLiquidity(addParams);
-    expect(result.tokenId).toBeDefined();
-
-    const tokenId = result.tokenId;
+    const tokenId = Number(result.logs?.[0]?.topics?.[1]);
+    expect(tokenId).toBeGreaterThan(0); // Means the position was created
 
     // 2. Monitor Position
     const status = await monitorPosition(tokenId, WETH, USDC);

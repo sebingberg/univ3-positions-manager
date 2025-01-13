@@ -1,14 +1,14 @@
 import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { addLiquidity } from '../../scripts/addLiquidity';
+import { addLiquidity } from '../../scripts/addLiquidity.js';
 import {
   FEE_TIERS,
   NFT_POSITION_MANAGER,
   POOL_ADDRESS,
   USDC,
   WETH,
-} from '../../scripts/utils/constants';
+} from '../../scripts/utils/constants.js';
 
 describe('Add Liquidity [scripts/addLiquidity.ts]', () => {
   it('should add liquidity with valid parameters', async () => {

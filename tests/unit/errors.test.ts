@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { addLiquidity } from '../../scripts/addLiquidity';
-import { monitorPosition } from '../../scripts/monitorPosition';
+import { addLiquidity } from '../../scripts/addLiquidity.js';
+import { monitorPosition } from '../../scripts/monitorPosition.js';
 import {
   FEE_TIERS,
   POOL_ADDRESS,
   USDC,
   WETH,
-} from '../../scripts/utils/constants';
+} from '../../scripts/utils/constants.js';
 
 describe('Error Handling', () => {
   it('should handle invalid price ranges', async () => {

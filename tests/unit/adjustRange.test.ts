@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
-import { adjustRange } from '../../scripts/adjustRange';
+import { adjustRange } from '../../scripts/adjustRange.js';
 import {
   NFT_POSITION_MANAGER,
   USDC,
   WETH,
-} from '../../scripts/utils/constants';
+} from '../../scripts/utils/constants.js';
 
 describe('Adjust Range [scripts/adjustRange.ts]', () => {
   it('should adjust position range successfully', async () => {

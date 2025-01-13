@@ -3,27 +3,24 @@ import { describe, expect, it } from 'vitest';
 import {
   FEE_TIERS,
   MaxUint128,
-  NETWORK,
+  NETWORK_NAME,
   NFT_POSITION_MANAGER,
   SLIPPAGE_TOLERANCE,
-  SWAP_ROUTER,
   USDC,
   WETH,
-} from '../../../scripts/utils/constants';
+} from '../../../scripts/utils/constants.js';
 
 describe('Constants [scripts/utils/constants.ts]', () => {
   describe('Network Configuration', () => {
     it('should use Sepolia testnet', () => {
-      expect(NETWORK).toBe('sepolia');
+      expect(NETWORK_NAME).toBe('sepolia');
     });
   });
 
   describe('Contract Addresses', () => {
     it('should have valid contract addresses', () => {
-      // * Test address format
       const addressRegex = /^0x[a-fA-F0-9]{40}$/;
       expect(NFT_POSITION_MANAGER).toMatch(addressRegex);
-      expect(SWAP_ROUTER).toMatch(addressRegex);
     });
   });
 
