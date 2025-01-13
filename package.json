@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "check": "pnpm type-check && pnpm lint && pnpm format:check",
-    "cli": "ts-node scripts/cli.ts",
+    "cli": "node --loader ts-node/esm scripts/cli.ts",
     "format": "prettier --write \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "format:check": "prettier --check \"scripts/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "lint": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\"",
@@ -57,5 +57,9 @@
   "bin": {
     "univ3": "./dist/cli.js"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.1",
+    "pnpm": ">=9.15.3"
+  }
 }
