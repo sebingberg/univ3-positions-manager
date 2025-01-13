@@ -10,15 +10,18 @@
  * ! 3. Have sufficient token balances
  */
 
+import { Pool } from '@uniswap/v3-sdk';
 import { Command } from 'commander';
 import { ethers } from 'ethers';
 
 import { addLiquidity } from './addLiquidity.js';
 import { adjustRange } from './adjustRange.js';
 import { formatPositionStatus, monitorPosition } from './monitorPosition.js';
-import { ERC20_ABI } from './utils/abis.js';
-import { FEE_TIERS, USDC, WETH } from './utils/constants.js';
+import { ERC20_ABI, POOL_ABI } from './utils/abis.js';
+import { POOL_ADDRESS, USDC, WETH } from './utils/constants.js';
 import { logger } from './utils/logger.js';
+import { calculateOptimalAmounts } from './utils/position.js';
+import { priceToTick, tickToTokenPrice } from './utils/price.js';
 import { withdrawLiquidity } from './withdrawLiquidity.js';
 
 const program = new Command();
@@ -30,31 +33,163 @@ program
 
 program
   .command('add')
-  .description('Add liquidity to an existing position')
-  .requiredOption('-i, --id <tokenId>', 'Position token ID')
-  .requiredOption('-a, --amount <amount>', 'Amount of tokens to add')
-  .requiredOption('-t, --token <token>', 'Token to add (WETH or USDC)')
+  .description('Add liquidity to create a new Uniswap V3 position')
+  .requiredOption('-t, --token-pair <pair>', 'Trading pair (e.g., USDC/WETH)')
+  .requiredOption('-l, --price-lower <price>', 'Lower price bound')
+  .requiredOption('-u, --price-upper <price>', 'Upper price bound')
+  .requiredOption('-a, --amount <amount>', 'Amount of token0 to add')
+  .requiredOption('-f, --fee <fee>', 'Fee tier (500, 3000, or 10000)')
+  .option('--dry-run', 'Calculate amounts without executing transaction')
   .action(async (options) => {
     try {
-      const params = {
-        tokenA: options.token === 'WETH' ? WETH : USDC,
-        tokenB: options.token === 'WETH' ? USDC : WETH,
-        fee: FEE_TIERS.MEDIUM,
-        amount: options.amount.toString(),
-        priceLower: 0,
-        priceUpper: 0,
+      // Parse and validate trading pair
+      const [token0Symbol, token1Symbol] = options.tokenPair.split('/');
+      if (!token0Symbol || !token1Symbol) {
+        throw new Error('Invalid trading pair format. Use format: USDC/WETH');
+      }
+
+      // Currently supporting only USDC/WETH pair
+      // TODO: Add support for other pairs
+      if (
+        !(
+          (token0Symbol === 'USDC' && token1Symbol === 'WETH') ||
+          (token0Symbol === 'WETH' && token1Symbol === 'USDC')
+        )
+      ) {
+        throw new Error('Currently only USDC/WETH pair is supported');
+      }
+
+      const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+      const poolContract = new ethers.Contract(
+        POOL_ADDRESS,
+        POOL_ABI,
+        provider,
+      );
+      const slot0 = await poolContract.slot0();
+
+      // Get token instances based on input order
+      const baseToken = token0Symbol === 'WETH' ? WETH : USDC;
+      const quoteToken = token1Symbol === 'WETH' ? WETH : USDC;
+
+      // Get current price and format amounts
+      const currentPrice = tickToTokenPrice(slot0.tick, baseToken, quoteToken);
+      const priceLower = Number(options.priceLower);
+      const priceUpper = Number(options.priceUpper);
+
+      // Add validation for price ranges
+      if (priceLower > 100000 || priceUpper > 100000) {
+        throw new Error('Price values are too high. Please use a lower range.');
+      }
+
+      logger.debug('Price range validation passed', {
+        priceLower,
+        priceUpper,
+        currentPrice,
+      });
+
+      // Calculate token amounts
+      const pool = new Pool(
+        baseToken,
+        quoteToken,
+        Number(options.fee),
+        slot0.sqrtPriceX96.toString(),
+        '0',
+        slot0.tick,
+      );
+
+      // Add debug logging for pool information
+      logger.debug('Pool Information', {
+        baseToken: baseToken.symbol,
+        quoteToken: quoteToken.symbol,
+        fee: options.fee,
+        sqrtPrice: slot0.sqrtPriceX96.toString(),
+        tick: slot0.tick,
+      });
+
+      // Add debug logging for price conversion
+      logger.debug('Price to Tick Conversion', {
+        priceLower,
+        priceUpper,
+        baseToken: baseToken.symbol,
+        quoteToken: quoteToken.symbol,
+      });
+
+      const lowerTick = priceToTick(priceLower, baseToken, quoteToken);
+      const upperTick = priceToTick(priceUpper, baseToken, quoteToken);
+
+      logger.debug('Calculated Ticks', {
+        lowerTick,
+        upperTick,
+      });
+
+      const { amount0, amount1 } = calculateOptimalAmounts(
+        pool,
+        lowerTick,
+        upperTick,
+        options.amount,
+      );
+
+      logger.debug('Calculated Amounts', {
+        amount0: amount0.toString(),
+        amount1: amount1.toString(),
+      });
+
+      const preview = {
+        currentPrice: `${currentPrice.toLocaleString()} USDC per WETH`,
+        priceRange: `${priceLower.toLocaleString()} - ${priceUpper.toLocaleString()} USDC per WETH`,
+        inRange: currentPrice >= priceLower && currentPrice <= priceUpper,
+        requiredWETH: ethers.formatUnits(amount0, 18),
+        requiredUSDC: ethers.formatUnits(amount1, 6),
+        feeTier: `${Number(options.fee) / 10000}%`,
       };
-      await addLiquidity(params);
-      logger.info('Liquidity Added Successfully', {
-        tokenId: options.id,
+
+      logger.info('Position Preview', preview);
+
+      if (options.dryRun) {
+        logger.info('Dry run completed. No transaction executed.', {
+          preview: 'dry-run',
+        });
+        return;
+      }
+
+      // Get token instances - declare these before using them
+      const token0 = token0Symbol === 'WETH' ? WETH : USDC;
+      const token1 = token1Symbol === 'WETH' ? WETH : USDC;
+
+      // Declare fee before using it
+      const fee = Number(options.fee);
+      if (![500, 3000, 10000].includes(fee)) {
+        throw new Error('Fee must be one of: 500, 3000, 10000');
+      }
+
+      // Continue with actual position creation if not dry run
+      logger.info('Creating position...', {
+        pair: options.tokenPair,
+        priceRange: { lower: priceLower, upper: priceUpper },
         amount: options.amount,
-        token: options.token,
+        fee,
+      });
+
+      const receipt = await addLiquidity({
+        tokenA: token0,
+        tokenB: token1,
+        fee: fee as 500 | 3000 | 10000,
+        amount: options.amount,
+        priceLower,
+        priceUpper,
+      });
+
+      logger.info('Position created successfully', {
+        tokenId: receipt?.logs?.[0]?.topics?.[3]?.toString(),
+        pair: options.tokenPair,
+        priceRange: `${priceLower} - ${priceUpper}`,
       });
     } catch (error) {
-      logger.error('Failed to add liquidity', {
+      logger.error('Failed to create position', {
         error: (error as Error).message,
-        tokenId: options.id,
+        stack: (error as Error).stack,
       });
+      process.exit(1);
     }
   });
 
@@ -197,7 +332,7 @@ program
 
       const tx = await tokenContract.approve(
         options.spender,
-        ethers.MaxUint256,
+        ethers.MaxUint256, // Allow unlimited spending
       );
 
       logger.info('Approval transaction sent', {

@@ -68,6 +68,18 @@ export function validateAddLiquidityParams(params: AddLiquidityParams): void {
   if (params.poolAddress && !params.poolAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
     throw new Error('Invalid pool address format');
   }
+
+  // Add validation for price range based on fee tier
+  const maxPrice = 1000000; // Set a reasonable maximum price
+  if (params.priceLower > maxPrice || params.priceUpper > maxPrice) {
+    throw new Error(`Price exceeds maximum allowed value of ${maxPrice}`);
+  }
+
+  // Validate minimum price difference based on fee tier
+  const minPriceDiff = params.priceLower * 0.0001; // 0.01% minimum price difference
+  if (params.priceUpper - params.priceLower < minPriceDiff) {
+    throw new Error('Price range too narrow for selected fee tier');
+  }
 }
 
 /**

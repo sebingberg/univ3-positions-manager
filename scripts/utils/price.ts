@@ -21,14 +21,23 @@
 import { Token } from '@uniswap/sdk-core';
 import { encodeSqrtRatioX96, TickMath, tickToPrice } from '@uniswap/v3-sdk';
 
+import { logger } from './logger.js';
+
 const MIN_TICK = -887272;
 const MAX_TICK = 887272;
+
+const TICK_SPACINGS = {
+  500: 10, // 0.05% fee tier
+  3000: 60, // 0.3% fee tier
+  10000: 200, // 1% fee tier
+};
 
 /**
  * ! Critical function for converting price to corresponding pool tick
  * @param price The desired price point (e.g., 1800 for 1 ETH = 1800 USDC)
  * @param baseToken The base token in the pair (e.g., WETH in WETH/USDC)
  * @param quoteToken The quote token in the pair (e.g., USDC in WETH/USDC)
+ * @param feeTier The fee tier of the pool (default is 500 for 0.05% fee tier)
  * @returns The closest tick that corresponds to the given price
  *
  * ? Example: For WETH/USDC pair at 1800 USDC per ETH:
@@ -40,15 +49,62 @@ export function priceToTick(
   price: number,
   baseToken: Token,
   quoteToken: Token,
+  feeTier: number = 500,
 ): number {
-  // * First encode the price into the Q64.96 format required by Uniswap V3
-  const sqrtRatioX96 = encodeSqrtRatioX96(
-    price * 10 ** quoteToken.decimals,
-    10 ** baseToken.decimals,
-  );
+  // Validate price is positive
+  if (price <= 0) {
+    throw new Error('Price must be greater than 0');
+  }
 
-  // ! Convert the Q64.96 price to its corresponding tick
-  return TickMath.getTickAtSqrtRatio(sqrtRatioX96);
+  logger.debug('Converting price to tick', {
+    price,
+    baseToken: baseToken.symbol,
+    quoteToken: quoteToken.symbol,
+    feeTier,
+  });
+
+  try {
+    // Convert price to Q64.96 format
+    const priceInQuoteDecimals = BigInt(
+      Math.floor(price * 10 ** quoteToken.decimals),
+    );
+    const baseDecimals = BigInt(10 ** baseToken.decimals);
+
+    const sqrtRatioX96 = encodeSqrtRatioX96(
+      priceInQuoteDecimals.toString(),
+      baseDecimals.toString(),
+    );
+
+    const tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
+    const tickSpacing = TICK_SPACINGS[feeTier as keyof typeof TICK_SPACINGS];
+
+    if (!tickSpacing) {
+      throw new Error(`Invalid fee tier: ${feeTier}`);
+    }
+
+    // Round to the nearest valid tick based on tick spacing
+    const roundedTick = Math.round(tick / tickSpacing) * tickSpacing;
+
+    // Validate tick is within bounds
+    if (roundedTick < MIN_TICK || roundedTick > MAX_TICK) {
+      throw new Error(
+        `Calculated tick ${roundedTick} is out of bounds. Must be between ${MIN_TICK} and ${MAX_TICK}`,
+      );
+    }
+
+    logger.debug('Price converted to tick', {
+      price,
+      rawTick: tick,
+      roundedTick,
+      tickSpacing,
+    });
+
+    return roundedTick;
+  } catch (error) {
+    throw new Error(
+      `Failed to convert price ${price} to tick: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 /**
@@ -62,25 +118,26 @@ export function priceToTick(
  * ? Example: A tick of 202641 might return 1800 for WETH/USDC
  */
 export function tickToTokenPrice(
-  tick: number,
+  tick: number | bigint,
   baseToken: Token,
   quoteToken: Token,
 ): number {
-  if (!Number.isInteger(tick)) {
-    throw new Error(`Invalid tick value: ${tick} (must be an integer)`);
-  }
-  if (tick < MIN_TICK || tick > MAX_TICK) {
+  const tickNumber = typeof tick === 'bigint' ? Number(tick) : tick;
+  const roundedTick = Math.round(tickNumber);
+
+  if (roundedTick < MIN_TICK || roundedTick > MAX_TICK) {
     throw new Error(
-      `Tick out of range: ${tick} (must be between ${MIN_TICK} and ${MAX_TICK})`,
+      `Tick out of range: ${roundedTick} (must be between ${MIN_TICK} and ${MAX_TICK})`,
     );
   }
 
   try {
-    const priceObject = tickToPrice(baseToken, quoteToken, tick);
-    return parseFloat(priceObject.toSignificant(8));
+    const priceObject = tickToPrice(baseToken, quoteToken, roundedTick);
+    const priceString = priceObject.toFixed(8);
+    return parseFloat(priceString);
   } catch (error) {
     throw new Error(
-      `Failed to convert tick ${tick} to price: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to convert tick ${roundedTick} to price: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
