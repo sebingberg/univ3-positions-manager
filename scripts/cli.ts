@@ -11,10 +11,12 @@
  */
 
 import { Command } from 'commander';
+import { ethers } from 'ethers';
 
 import { addLiquidity } from './addLiquidity.js';
 import { adjustRange } from './adjustRange.js';
 import { formatPositionStatus, monitorPosition } from './monitorPosition.js';
+import { ERC20_ABI } from './utils/abis.js';
 import { FEE_TIERS, USDC, WETH } from './utils/constants.js';
 import { logger } from './utils/logger.js';
 import { withdrawLiquidity } from './withdrawLiquidity.js';
@@ -131,6 +133,44 @@ program
       logger.error('Failed to withdraw', {
         error: (error as Error).message,
         params: options,
+      });
+    }
+  });
+
+program
+  .command('check-allowance')
+  .description('Check token approval for Position Manager')
+  .requiredOption('-t, --token <token>', 'Token to check (WETH or USDC)')
+  .requiredOption(
+    '-s, --spender <address>',
+    'Spender address (Position Manager)',
+  )
+  .action(async (options) => {
+    try {
+      const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+
+      const token = options.token === 'WETH' ? WETH : USDC;
+      const tokenContract = new ethers.Contract(
+        token.address,
+        ERC20_ABI,
+        provider,
+      );
+
+      const allowance = await tokenContract.allowance(
+        wallet.address,
+        options.spender,
+      );
+
+      logger.info('Current Allowance', {
+        token: options.token,
+        spender: options.spender,
+        allowance: ethers.formatUnits(allowance, token.decimals),
+      });
+    } catch (error) {
+      logger.error('Failed to check allowance', {
+        error: (error as Error).message,
+        token: options.token,
       });
     }
   });
