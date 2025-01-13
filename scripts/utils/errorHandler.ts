@@ -44,10 +44,26 @@ export async function withErrorHandling<T>(
   try {
     return await operation();
   } catch (err) {
-    // * Type assertion for error handling
+    // Type assertion for error handling
     const error = err as Error;
 
-    // * Handle contract-related errors
+    // Handle RPC/Network configuration errors
+    if (
+      error.message?.includes('RPC_URL') ||
+      error.message?.includes('Failed to connect to network')
+    ) {
+      logger.error('Network Configuration Error', {
+        ...context,
+        errorMessage: error.message,
+      });
+      throw new LiquidityError(
+        `Network configuration error: ${error.message}`,
+        context,
+        error,
+      );
+    }
+
+    // Handle contract-related errors
     if (error.message?.includes('contract')) {
       logger.error('Contract Error', {
         ...context,
@@ -60,7 +76,7 @@ export async function withErrorHandling<T>(
       );
     }
 
-    // * Handle network-related errors
+    // Handle network-related errors
     if (
       error.message?.includes('network') ||
       error.message?.includes('provider')
@@ -76,7 +92,7 @@ export async function withErrorHandling<T>(
       );
     }
 
-    // * Handle unknown errors
+    // Handle unknown errors
     logger.error('Unknown Error', {
       ...context,
       error: error.message,

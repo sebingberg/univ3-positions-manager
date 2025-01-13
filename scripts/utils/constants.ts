@@ -27,17 +27,43 @@
  */
 
 import { Token } from '@uniswap/sdk-core';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 // Network
 export const CHAIN_ID = 11155111; // Sepolia
 export const NETWORK_NAME = 'sepolia';
 
+// Environment validation
+function validateEnvironment(): void {
+  if (!process.env.RPC_URL) {
+    throw new Error(
+      'RPC_URL environment variable is not set. Please create a .env file with your RPC endpoint.',
+    );
+  }
+
+  if (!process.env.PRIVATE_KEY) {
+    throw new Error(
+      'PRIVATE_KEY environment variable is not set. Please create a .env file with your private key.',
+    );
+  }
+}
+
+// Run validation when constants are imported
+validateEnvironment();
+
+// Environment variables
+export const RPC_URL = process.env.RPC_URL!;
+export const PRIVATE_KEY = process.env.PRIVATE_KEY!;
+
 // Contract Addresses
 export const WETH_ADDRESS = '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9';
 export const USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
-export const POOL_ADDRESS = '0x3289680dD4d6C10bb19b899729cda5eEF58AEfF1'; // The pool contract address in the provided Network where you created your liquidity position (Sepolia USDC/WETH pool provided as an example)
+export const POOL_ADDRESS = '0x3289680dD4d6C10bb19b899729cda5eEF58AEfF1';
 export const NFT_POSITION_MANAGER =
-  '0x1238536071E1c677A632429e3655c799b22cDA52'; // The Uniswap V3 Positions NFT contract address in the provided Network that mints and burns NFT Liquidity positions (Sepolia Uniswap V3 Positions NFT-V1 provided as an example)
+  '0x1238536071E1c677A632429e3655c799b22cDA52';
 
 // Tokens
 export const WETH = new Token(
