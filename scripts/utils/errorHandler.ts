@@ -3,7 +3,7 @@
  * @description Utility for standardized error handling across the application.
  */
 
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 /**
  * ! Interface defining the context for error handling
@@ -13,17 +13,21 @@ import { logger } from './logger';
  */
 interface ErrorContext {
   operation: string;
-  params?: any;
+  params?: unknown;
   contractAddress?: string;
 }
 
 export class LiquidityError extends Error {
   constructor(
     message: string,
-    public context: ErrorContext,
-    public originalError?: Error,
+    public readonly context: ErrorContext,
+    public readonly originalError?: Error,
   ) {
-    super(message);
+    super(
+      `${message} [operation: ${context.operation}]${
+        originalError ? `: ${originalError.message}` : ''
+      }`,
+    );
     this.name = 'LiquidityError';
   }
 }
