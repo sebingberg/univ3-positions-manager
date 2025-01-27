@@ -1,10 +1,7 @@
 /**
  * @file utils/price.ts
  * @description Utility functions for handling price calculations and conversions
- * in Uniswap V3. Provides tools for:
- * - Converting between human-readable prices and Uniswap ticks
- * - Validating price ranges for positions
- * - Converting between different price representations
+ * in Uniswap V3 using the official SDK.
  *
  * @example
  * ```typescript
@@ -19,15 +16,14 @@
  */
 
 import { JSBI } from '@uniswap/sdk';
-import { Token } from '@uniswap/sdk-core';
+import { Price, Token } from '@uniswap/sdk-core';
 import { TickMath } from '@uniswap/v3-sdk';
-import { Decimal } from 'decimal.js';
 
 import { TICK_SPACINGS } from './constants.js';
 import { logger } from './logger.js';
 
-const MIN_TICK = -887272;
-const MAX_TICK = 887272;
+const MIN_TICK = TickMath.MIN_TICK;
+const MAX_TICK = TickMath.MAX_TICK;
 
 /**
  * ! Critical function for converting price to corresponding pool tick
@@ -61,16 +57,24 @@ export function priceToTick(
   });
 
   try {
-    const decimalPrice = new Decimal(price);
-    const decimalAdjustment = new Decimal(10).pow(
-      baseToken.decimals - quoteToken.decimals,
+    // Create a Price object using the SDK
+    const tokenPrice = new Price(
+      baseToken,
+      quoteToken,
+      JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(baseToken.decimals)),
+      JSBI.BigInt(Math.round(price * 10 ** quoteToken.decimals)),
     );
-    const decimalAdjustedPrice = decimalPrice.mul(decimalAdjustment);
 
-    const sqrtRatioX96 = Math.sqrt(decimalAdjustedPrice.toNumber()) * 2 ** 96;
-    const tick = TickMath.getTickAtSqrtRatio(
-      JSBI.BigInt(Math.floor(sqrtRatioX96)),
+    // Convert price to sqrtPriceX96
+    const Q192 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(192));
+    const sqrtPriceX96 = JSBI.BigInt(
+      Math.sqrt(
+        Number(tokenPrice.asFraction.multiply(Q192).quotient.toString()),
+      ),
     );
+
+    // Get the tick value using TickMath
+    const tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
     // Round to the nearest valid tick based on fee tier
     const tickSpacing = getTickSpacing(feeTier);
@@ -113,27 +117,23 @@ export function tickToTokenPrice(
   baseToken: Token,
   quoteToken: Token,
 ): number {
-  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(tick);
-  const ratioX192 = JSBI.multiply(sqrtRatioX96, sqrtRatioX96);
-  const shift = JSBI.leftShift(JSBI.BigInt(1), JSBI.BigInt(192));
+  try {
+    const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(tick);
+    const Q192 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(192));
+    const ratioX192 = JSBI.multiply(sqrtRatioX96, sqrtRatioX96);
 
-  // Convert to decimal for precision
-  const ratio = new Decimal(ratioX192.toString()).div(shift.toString());
+    const price = new Price(baseToken, quoteToken, Q192, ratioX192);
 
-  // Apply decimal adjustment
-  const decimalAdjustment = new Decimal(10).pow(
-    quoteToken.decimals - baseToken.decimals,
-  );
-
-  // Calculate final price
-  const price = ratio.mul(decimalAdjustment);
-
-  return price.toNumber();
+    return parseFloat(price.toSignificant(6));
+  } catch (error) {
+    throw new Error(
+      `Failed to convert tick ${tick} to price: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 /**
  * ! Important validation function for price ranges
- * @param currentMarketPrice Current price of the token pair
  * @param desiredLowerPrice Lower bound of the price range
  * @param desiredUpperPrice Upper bound of the price range
  * @returns true if the range is valid, throws error otherwise
