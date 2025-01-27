@@ -83,7 +83,8 @@ export const FEE_TIERS = {
   HIGH: 10000,
 } as const satisfies Record<string, 500 | 3000 | 10000>;
 
-export const SLIPPAGE_TOLERANCE = 0.5; // 0.5%
+// ! Important: SLIPPAGE_TOLERANCE is in decimal form (0.005 = 0.5%)
+export const SLIPPAGE_TOLERANCE = 0.005; // 0.5%
 
 // * Useful constants for contract interactions
 export const MaxUint128 = 2n ** 128n - 1n; // Since Ethers v6 doesn't provide this
