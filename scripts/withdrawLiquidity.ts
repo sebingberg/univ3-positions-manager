@@ -57,9 +57,37 @@ export async function withdrawLiquidity(
         wallet,
       );
 
+      // Check if position exists and get position info
       const position = (await positionManager.positions(
         tokenId,
       )) as PositionInfo;
+
+      if (!position || position.liquidity === 0n) {
+        throw new Error('Invalid token ID or position has no liquidity');
+      }
+
+      // Validate percentage
+      if (
+        options.percentageToWithdraw! <= 0 ||
+        options.percentageToWithdraw! > 100
+      ) {
+        throw new Error('Percentage must be between 0 and 100');
+      }
+
+      // Check approval status
+      const owner = await positionManager.ownerOf(tokenId);
+      const isApproved =
+        (await positionManager.isApprovedForAll(owner, NFT_POSITION_MANAGER)) ||
+        (await positionManager.getApproved(tokenId)) === NFT_POSITION_MANAGER;
+
+      if (!isApproved) {
+        logger.info('Approving position manager...', { tokenId });
+        const approveTx = await positionManager.setApprovalForAll(
+          NFT_POSITION_MANAGER,
+          true,
+        );
+        await approveTx.wait();
+      }
 
       const liquidityToWithdraw =
         (BigInt(position.liquidity) * BigInt(options.percentageToWithdraw!)) /
