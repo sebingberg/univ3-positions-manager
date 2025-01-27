@@ -92,11 +92,13 @@ export async function addLiquidity(
         params.priceLower,
         params.tokenA,
         params.tokenB,
+        params.fee,
       );
       const tickUpper = priceToTick(
         params.priceUpper,
         params.tokenA,
         params.tokenB,
+        params.fee,
       );
 
       // Calculate optimal amounts
