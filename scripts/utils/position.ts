@@ -43,20 +43,42 @@ export function calculateOptimalAmounts(
   upperTick: number,
   liquidityAmount: string,
 ): { amount0: bigint; amount1: bigint } {
-  // * Create a new position instance to calculate amounts
-  const position = new Position({
-    pool,
-    liquidity: ethers.parseEther(liquidityAmount).toString(),
-    tickLower: lowerTick,
-    tickUpper: upperTick,
-  });
+  // Validate ticks are within bounds
+  if (lowerTick >= upperTick) {
+    throw new Error('Lower tick must be less than upper tick');
+  }
 
-  // * Convert amounts to bigint
-  const amounts = position.mintAmounts;
-  return {
-    amount0: BigInt(amounts.amount0.toString()),
-    amount1: BigInt(amounts.amount1.toString()),
-  };
+  // Validate liquidity amount
+  const liquidityBigInt = ethers.parseEther(liquidityAmount);
+  if (liquidityBigInt <= BigInt(0)) {
+    throw new Error('Liquidity amount must be greater than 0');
+  }
+
+  try {
+    // Create a new position instance to calculate amounts
+    const position = new Position({
+      pool,
+      liquidity: liquidityBigInt.toString(),
+      tickLower: lowerTick,
+      tickUpper: upperTick,
+    });
+
+    // Get mint amounts and ensure they are valid
+    const amounts = position.mintAmounts;
+    const amount0 = BigInt(amounts.amount0.toString());
+    const amount1 = BigInt(amounts.amount1.toString());
+
+    if (amount0 <= BigInt(0) && amount1 <= BigInt(0)) {
+      throw new Error('Invalid position: both token amounts are 0');
+    }
+
+    return { amount0, amount1 };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('PRICE_BOUNDS')) {
+      throw new Error('Price is out of valid bounds for the pool');
+    }
+    throw error;
+  }
 }
 
 /**
