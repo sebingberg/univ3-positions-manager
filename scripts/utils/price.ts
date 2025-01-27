@@ -17,32 +17,28 @@
 
 import { JSBI } from '@uniswap/sdk';
 import { Token } from '@uniswap/sdk-core';
-import { encodeSqrtRatioX96, TickMath } from '@uniswap/v3-sdk';
+import { TickMath } from '@uniswap/v3-sdk';
 import { Decimal } from 'decimal.js';
 
 import { TICK_SPACINGS } from './constants.js';
 import { logger } from './logger.js';
 
+// Configure Decimal.js for high precision
+Decimal.set({ precision: 50, rounding: 4 });
+
 // Helper function to get nearest usable tick
 function nearestUsableTick(tick: number, tickSpacing: number): number {
   const rounded = Math.round(tick / tickSpacing) * tickSpacing;
-  const minTick = TickMath.MIN_TICK;
-  const maxTick = TickMath.MAX_TICK;
-  return Math.min(Math.max(rounded, minTick), maxTick);
+  return Math.min(Math.max(rounded, TickMath.MIN_TICK), TickMath.MAX_TICK);
 }
 
 /**
  * ! Critical function for converting price to corresponding pool tick
- * @param price The desired price point (e.g., 1800 for 1 ETH = 1800 USDC)
+ * @param price The desired price point (e.g., 67067.10 for 1 WETH = 67067.10 USDC)
  * @param baseToken The base token in the pair (e.g., WETH in WETH/USDC)
  * @param quoteToken The quote token in the pair (e.g., USDC in WETH/USDC)
  * @param feeTier The fee tier of the pool (default is 3000 for 0.3% fee tier)
  * @returns The closest tick that corresponds to the given price
- *
- * ? Example: For WETH/USDC pair at 1800 USDC per ETH:
- * ? - price = 1800
- * ? - baseToken = WETH (18 decimals)
- * ? - quoteToken = USDC (6 decimals)
  */
 export function priceToTick(
   price: number,
@@ -58,33 +54,38 @@ export function priceToTick(
       feeTier,
     });
 
-    // Convert price to Q96.96 format considering token decimals
-    const decimalAdjustment = quoteToken.decimals - baseToken.decimals;
-    const adjustedPrice = price * Math.pow(10, decimalAdjustment);
+    // Convert price to decimal for precision
+    const decimalPrice = new Decimal(price);
 
-    // Calculate sqrt price
-    const sqrtPriceX96 = encodeSqrtRatioX96(
-      JSBI.BigInt(Math.floor(adjustedPrice * 1e18)),
-      JSBI.BigInt(1e18),
+    // Adjust for token decimals (base/quote)
+    const decimalAdjustment = baseToken.decimals - quoteToken.decimals;
+    const adjustedPrice = decimalPrice.mul(
+      new Decimal(10).pow(decimalAdjustment),
     );
 
+    // Calculate sqrt price with Q96 adjustment
+    const sqrtPrice = adjustedPrice.sqrt();
+    const sqrtPriceX96 = sqrtPrice.mul(new Decimal(2).pow(96));
+
+    // Convert to JSBI for SDK compatibility
+    const sqrtPriceX96Int = JSBI.BigInt(sqrtPriceX96.floor().toFixed(0));
+
     // Get tick from sqrt price
-    const tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+    const tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96Int);
+
+    // Apply tick spacing
     const tickSpacing = getTickSpacing(feeTier);
     const roundedTick = nearestUsableTick(Number(tick), tickSpacing);
 
     logger.debug('Price converted to tick', {
       price,
+      adjustedPrice: adjustedPrice.toString(),
       tick: Number(tick),
       roundedTick,
-      tickSpacing,
     });
 
     return roundedTick;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('SQRT_RATIO')) {
-      throw new Error(`Invalid sqrt price ratio for price ${price}`);
-    }
     throw new Error(
       `Price conversion error: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
@@ -96,12 +97,7 @@ export function priceToTick(
  * @param tick The tick value to convert
  * @param baseToken The base token in the pair
  * @param quoteToken The quote token in the pair
- * @returns The price as a string in quote token units per one base token
- *
- * ? Example: For WETH/USDC pair at tick corresponding to 1800 USDC per ETH:
- * ? - tick = <calculated tick>
- * ? - baseToken = WETH (18 decimals)
- * ? - quoteToken = USDC (6 decimals)
+ * @returns The price in quote token units per one base token
  */
 export function tickToTokenPrice(
   tick: number,
@@ -111,26 +107,28 @@ export function tickToTokenPrice(
   try {
     logger.debug('Converting tick to price', { tick });
 
-    // Get sqrt price from tick
+    // Get sqrt price from tick using SDK
     const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(tick);
+    const sqrtPriceX96Decimal = new Decimal(sqrtRatioX96.toString());
 
-    // Calculate ratio using decimal.js for precision
-    const ratio = new Decimal(sqrtRatioX96.toString())
-      .div(new Decimal(2).pow(96))
-      .pow(2);
+    // Convert to decimal for precision
+    const sqrtPrice = sqrtPriceX96Decimal.div(new Decimal(2).pow(96));
+    const price = sqrtPrice.pow(2);
 
-    // Adjust for token decimals - note the reversed order compared to priceToTick
+    // Adjust for token decimals (base/quote)
     const decimalAdjustment = quoteToken.decimals - baseToken.decimals;
-    const price = ratio.mul(new Decimal(10).pow(decimalAdjustment));
+    const adjustedPrice = price.mul(new Decimal(10).pow(decimalAdjustment));
 
-    logger.debug('Tick converted to price', { price: price.toString() });
+    // Return with reasonable precision
+    const result = Number(adjustedPrice.toFixed(2));
+    logger.debug('Tick converted to price', {
+      tick,
+      sqrtRatioX96: sqrtRatioX96.toString(),
+      price: result,
+    });
 
-    // Return the price as a number
-    return Number(price.toString());
+    return result;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('TICK_BOUND')) {
-      throw new Error(`Tick ${tick} is outside valid bounds`);
-    }
     throw new Error(
       `Failed to convert tick ${tick} to price: ${error instanceof Error ? error.message : String(error)}`,
     );
