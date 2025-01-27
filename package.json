@@ -38,7 +38,9 @@
     "commander": "^11.0.0",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
-    "jsbi": "^4.3.0"
+    "jsbi": "^4.3.0",
+    "@uniswap/sdk": "^3.0.3",
+    "decimal.js": "^10.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.17.12",
