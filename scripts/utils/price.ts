@@ -57,13 +57,21 @@ export function priceToTick(
     // Convert price to decimal for precision
     const decimalPrice = new Decimal(price);
 
-    // Adjust for token decimals (base/quote)
-    const decimalAdjustment = baseToken.decimals - quoteToken.decimals;
-    const adjustedPrice = decimalPrice.mul(
-      new Decimal(10).pow(decimalAdjustment),
-    );
+    // For pool math, we need the price in terms of token1/token0
+    // If baseToken is token0, we need to invert the price
+    const isBaseToken0 =
+      baseToken.address.toLowerCase() < quoteToken.address.toLowerCase();
+    const poolPrice = isBaseToken0
+      ? new Decimal(1).div(decimalPrice)
+      : decimalPrice;
 
-    // Calculate sqrt price with Q96 adjustment
+    // Adjust for token decimals (token1/token0)
+    const decimalAdjustment = isBaseToken0
+      ? quoteToken.decimals - baseToken.decimals
+      : baseToken.decimals - quoteToken.decimals;
+    const adjustedPrice = poolPrice.mul(new Decimal(10).pow(decimalAdjustment));
+
+    // Calculate sqrt price
     const sqrtPrice = adjustedPrice.sqrt();
     const sqrtPriceX96 = sqrtPrice.mul(new Decimal(2).pow(96));
 
@@ -113,11 +121,21 @@ export function tickToTokenPrice(
 
     // Convert to decimal for precision
     const sqrtPrice = sqrtPriceX96Decimal.div(new Decimal(2).pow(96));
-    const price = sqrtPrice.pow(2);
+    const poolPrice = sqrtPrice.pow(2);
 
-    // Adjust for token decimals (base/quote)
-    const decimalAdjustment = quoteToken.decimals - baseToken.decimals;
-    const adjustedPrice = price.mul(new Decimal(10).pow(decimalAdjustment));
+    // For pool math, price is in terms of token1/token0
+    // If baseToken is token0, we need to invert the price
+    const isBaseToken0 =
+      baseToken.address.toLowerCase() < quoteToken.address.toLowerCase();
+    const humanPrice = isBaseToken0 ? new Decimal(1).div(poolPrice) : poolPrice;
+
+    // Adjust for token decimals (to get human-readable price)
+    const decimalAdjustment = isBaseToken0
+      ? baseToken.decimals - quoteToken.decimals
+      : quoteToken.decimals - baseToken.decimals;
+    const adjustedPrice = humanPrice.mul(
+      new Decimal(10).pow(decimalAdjustment),
+    );
 
     // Return with reasonable precision
     const result = Number(adjustedPrice.toFixed(2));
