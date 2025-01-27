@@ -12,6 +12,7 @@
     "lint": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\"",
     "lint:fix": "eslint \"scripts/**/*.{js,ts}\" \"tests/**/*.{js,ts}\" --fix",
     "start": "node dist/index.js",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "type-check": "tsc --noEmit"
@@ -36,7 +37,8 @@
     "@uniswap/v3-sdk": "^3.20.0",
     "commander": "^11.0.0",
     "dotenv": "^16.4.7",
-    "ethers": "^6.13.5"
+    "ethers": "^6.13.5",
+    "jsbi": "^4.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.12",
