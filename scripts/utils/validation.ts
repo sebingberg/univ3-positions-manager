@@ -69,16 +69,28 @@ export function validateAddLiquidityParams(params: AddLiquidityParams): void {
     throw new Error('Invalid pool address format');
   }
 
-  // Add validation for price range based on fee tier
-  const maxPrice = 1000000; // Set a reasonable maximum price
-  if (params.priceLower > maxPrice || params.priceUpper > maxPrice) {
-    throw new Error(`Price exceeds maximum allowed value of ${maxPrice}`);
-  }
+  // Get tick spacing for the fee tier
+  const tickSpacing = {
+    [FEE_TIERS.LOW]: 10,
+    [FEE_TIERS.MEDIUM]: 60,
+    [FEE_TIERS.HIGH]: 200,
+  }[params.fee];
 
-  // Validate minimum price difference based on fee tier
-  const minPriceDiff = params.priceLower * 0.0001; // 0.01% minimum price difference
-  if (params.priceUpper - params.priceLower < minPriceDiff) {
-    throw new Error('Price range too narrow for selected fee tier');
+  // Ensure prices are within valid tick range
+  validatePriceRange(params.priceLower, params.priceUpper);
+
+  // Validate minimum price difference based on tick spacing
+  // The minimum price difference should be at least one tick spacing
+  const minTickDiff = tickSpacing;
+  const currentTick = Math.floor(
+    Math.log(params.priceLower) / Math.log(1.0001),
+  );
+  const upperTick = Math.floor(Math.log(params.priceUpper) / Math.log(1.0001));
+
+  if (upperTick - currentTick < minTickDiff) {
+    throw new Error(
+      `Price range too narrow for fee tier ${params.fee}. Minimum tick difference: ${minTickDiff}`,
+    );
   }
 }
 
