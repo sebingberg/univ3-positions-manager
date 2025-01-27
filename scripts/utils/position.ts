@@ -48,6 +48,12 @@ export function calculateOptimalAmounts(
     throw new Error('Lower tick must be less than upper tick');
   }
 
+  // Validate ticks are within pool bounds
+  const tickSpacing = pool.tickSpacing;
+  if (lowerTick % tickSpacing !== 0 || upperTick % tickSpacing !== 0) {
+    throw new Error(`Ticks must be multiples of ${tickSpacing}`);
+  }
+
   // Validate liquidity amount
   const liquidityBigInt = ethers.parseEther(liquidityAmount);
   if (liquidityBigInt <= BigInt(0)) {
@@ -68,14 +74,22 @@ export function calculateOptimalAmounts(
     const amount0 = BigInt(amounts.amount0.toString());
     const amount1 = BigInt(amounts.amount1.toString());
 
-    if (amount0 <= BigInt(0) && amount1 <= BigInt(0)) {
+    // Validate amounts
+    if (amount0 === BigInt(0) && amount1 === BigInt(0)) {
       throw new Error('Invalid position: both token amounts are 0');
     }
 
     return { amount0, amount1 };
   } catch (error) {
-    if (error instanceof Error && error.message.includes('PRICE_BOUNDS')) {
-      throw new Error('Price is out of valid bounds for the pool');
+    if (error instanceof Error) {
+      if (error.message.includes('PRICE_BOUNDS')) {
+        throw new Error('Price is out of valid bounds for the pool');
+      }
+      if (error.message.includes('TICK')) {
+        throw new Error(
+          `Invalid tick range: lower=${lowerTick}, upper=${upperTick}`,
+        );
+      }
     }
     throw error;
   }
@@ -90,6 +104,11 @@ export function calculateMinimumAmounts(
   desiredAmount1: bigint,
   slippageTolerance: number = SLIPPAGE_TOLERANCE,
 ): { amount0Min: bigint; amount1Min: bigint } {
+  // Validate slippage tolerance
+  if (slippageTolerance < 0 || slippageTolerance > 1) {
+    throw new Error('Slippage tolerance must be between 0 and 1');
+  }
+
   const slippageMultiplier = BigInt(
     Math.floor((1 - slippageTolerance) * 10000),
   );
