@@ -18,19 +18,16 @@
  *
  */
 
+import { JSBI } from '@uniswap/sdk';
 import { Token } from '@uniswap/sdk-core';
-import { encodeSqrtRatioX96, TickMath, tickToPrice } from '@uniswap/v3-sdk';
+import { TickMath } from '@uniswap/v3-sdk';
+import { Decimal } from 'decimal.js';
 
+import { TICK_SPACINGS } from './constants.js';
 import { logger } from './logger.js';
 
 const MIN_TICK = -887272;
 const MAX_TICK = 887272;
-
-const TICK_SPACINGS = {
-  500: 10, // 0.05% fee tier
-  3000: 60, // 0.3% fee tier
-  10000: 200, // 1% fee tier
-};
 
 /**
  * ! Critical function for converting price to corresponding pool tick
@@ -64,25 +61,19 @@ export function priceToTick(
   });
 
   try {
-    // Convert price to Q64.96 format
-    const priceInQuoteDecimals = BigInt(
-      Math.floor(price * 10 ** quoteToken.decimals),
+    const decimalPrice = new Decimal(price);
+    const decimalAdjustment = new Decimal(10).pow(
+      baseToken.decimals - quoteToken.decimals,
     );
-    const baseDecimals = BigInt(10 ** baseToken.decimals);
+    const decimalAdjustedPrice = decimalPrice.mul(decimalAdjustment);
 
-    const sqrtRatioX96 = encodeSqrtRatioX96(
-      priceInQuoteDecimals.toString(),
-      baseDecimals.toString(),
+    const sqrtRatioX96 = Math.sqrt(decimalAdjustedPrice.toNumber()) * 2 ** 96;
+    const tick = TickMath.getTickAtSqrtRatio(
+      JSBI.BigInt(Math.floor(sqrtRatioX96)),
     );
 
-    const tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
-    const tickSpacing = TICK_SPACINGS[feeTier as keyof typeof TICK_SPACINGS];
-
-    if (!tickSpacing) {
-      throw new Error(`Invalid fee tier: ${feeTier}`);
-    }
-
-    // Round to the nearest valid tick based on tick spacing
+    // Round to the nearest valid tick based on fee tier
+    const tickSpacing = getTickSpacing(feeTier);
     const roundedTick = Math.round(tick / tickSpacing) * tickSpacing;
 
     // Validate tick is within bounds
@@ -118,28 +109,26 @@ export function priceToTick(
  * ? Example: A tick of 202641 might return 1800 for WETH/USDC
  */
 export function tickToTokenPrice(
-  tick: number | bigint,
+  tick: number,
   baseToken: Token,
   quoteToken: Token,
 ): number {
-  const tickNumber = typeof tick === 'bigint' ? Number(tick) : tick;
-  const roundedTick = Math.round(tickNumber);
+  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(tick);
+  const ratioX192 = JSBI.multiply(sqrtRatioX96, sqrtRatioX96);
+  const shift = JSBI.leftShift(JSBI.BigInt(1), JSBI.BigInt(192));
 
-  if (roundedTick < MIN_TICK || roundedTick > MAX_TICK) {
-    throw new Error(
-      `Tick out of range: ${roundedTick} (must be between ${MIN_TICK} and ${MAX_TICK})`,
-    );
-  }
+  // Convert to decimal for precision
+  const ratio = new Decimal(ratioX192.toString()).div(shift.toString());
 
-  try {
-    const priceObject = tickToPrice(baseToken, quoteToken, roundedTick);
-    const priceString = priceObject.toFixed(8);
-    return parseFloat(priceString);
-  } catch (error) {
-    throw new Error(
-      `Failed to convert tick ${roundedTick} to price: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+  // Apply decimal adjustment
+  const decimalAdjustment = new Decimal(10).pow(
+    quoteToken.decimals - baseToken.decimals,
+  );
+
+  // Calculate final price
+  const price = ratio.mul(decimalAdjustment);
+
+  return price.toNumber();
 }
 
 /**
@@ -164,4 +153,13 @@ export function validatePriceRange(
     throw new Error('Prices must be greater than 0');
   }
   return true;
+}
+
+// Helper function to get tick spacing based on fee tier
+function getTickSpacing(feeTier: number): number {
+  const tickSpacing = TICK_SPACINGS[feeTier as keyof typeof TICK_SPACINGS];
+  if (!tickSpacing) {
+    throw new Error(`Invalid fee tier: ${feeTier}`);
+  }
+  return tickSpacing;
 }
