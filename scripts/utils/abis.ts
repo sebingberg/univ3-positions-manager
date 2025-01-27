@@ -20,6 +20,8 @@ export const POSITION_MANAGER_ABI = [
   'function ownerOf(uint256 tokenId) view returns (address)',
   'function getApproved(uint256 tokenId) view returns (address)',
   'function factory() view returns (address)',
+  'function setApprovalForAll(address operator, bool approved) external',
+  'function isApprovedForAll(address owner, address operator) view returns (bool)',
 
   // Fee Collection
   'function collect(tuple(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max)) external payable returns (uint256 amount0, uint256 amount1)',
