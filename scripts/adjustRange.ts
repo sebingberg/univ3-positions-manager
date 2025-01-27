@@ -71,11 +71,13 @@ export async function adjustRange(
         params.newPriceLower,
         baseToken,
         quoteToken,
+        position.fee,
       );
       const newTickUpper = priceToTick(
         params.newPriceUpper,
         baseToken,
         quoteToken,
+        position.fee,
       );
 
       // Step 1: Remove all liquidity from current position
