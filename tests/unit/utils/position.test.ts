@@ -1,67 +1,103 @@
-import { Pool } from '@uniswap/v3-sdk';
 import { describe, expect, it } from 'vitest';
 
-import { FEE_TIERS, USDC, WETH } from '../../../scripts/utils/constants.js';
 import {
   calculateMinimumAmounts,
   calculateOptimalAmounts,
 } from '../../../scripts/utils/position.js';
+import { MockPool, MockTokens } from '../../mocks/uniswap.js';
 
 describe('Position Utilities [scripts/utils/position.ts]', () => {
   describe('calculateOptimalAmounts()', () => {
     it('should calculate amounts for a given liquidity', () => {
-      // * Create a mock pool instance
-      const pool = new Pool(
-        WETH,
-        USDC,
-        FEE_TIERS.MEDIUM,
-        '2437312313659959819381354528', // sqrtPriceX96
-        '10000', // liquidity
-        202641, // tick at ~1800 USDC/ETH
-      );
+      // Use the mock pool instance directly
+      const pool = MockPool.instance;
 
+      // Use real position ticks from Sepolia
+      const lowerTick = 163420; // Min tick from real position
+      const upperTick = 170320; // Max tick from real position
+
+      // Test with actual amounts from Sepolia position
       const amounts = calculateOptimalAmounts(
         pool,
-        202641 - 1000, // Lower tick
-        202641 + 1000, // Upper tick
-        '1.0', // 1 ETH worth of liquidity
+        lowerTick,
+        upperTick,
+        '3.00', // 3.00 USDC based on real position
       );
 
-      // * Verify returned amounts
+      // Basic type and value checks
       expect(amounts.amount0).toBeTypeOf('bigint');
       expect(amounts.amount1).toBeTypeOf('bigint');
       expect(amounts.amount0).toBeGreaterThan(0n);
       expect(amounts.amount1).toBeGreaterThan(0n);
+
+      // Get expected amounts from real position data
+      const baseEth = BigInt('1' + '0'.repeat(15)); // ~0.001 ETH
+      const baseUsdc = BigInt(3_000_000); // 3.00 USDC = 3 * 10^6 (USDC has 6 decimals)
+
+      // Log the actual amounts for debugging
+      console.log('Test amounts:', {
+        amount0: amounts.amount0.toString(),
+        amount1: amounts.amount1.toString(),
+        baseEth: baseEth.toString(),
+        baseUsdc: baseUsdc.toString(),
+        baseEthBounds: (baseEth * 2n).toString(),
+        baseUsdcBounds: (baseUsdc * 2n).toString(),
+        currentPrice: MockPool.prices.current,
+        priceRange: {
+          min: 40009.5,
+          max: 80004.5,
+          current: 61840.6,
+        },
+        tickRange: {
+          lower: lowerTick,
+          upper: upperTick,
+          current: MockPool.slot0.tick,
+        },
+      });
+
+      // For concentrated liquidity positions, amounts can vary based on price
+      // Using wider bounds since actual amounts depend on current price vs range
+      expect(amounts.amount0).toBeGreaterThan(0n);
+      expect(amounts.amount0).toBeLessThan(BigInt('1' + '0'.repeat(16))); // Max 0.01 ETH
+      expect(amounts.amount1).toBeGreaterThan(BigInt('1' + '0'.repeat(6))); // Min 1 USDC
+      expect(amounts.amount1).toBeLessThan(BigInt('10' + '0'.repeat(6))); // Max 10 USDC
     });
   });
 
   describe('calculateMinimumAmounts()', () => {
-    it('should calculate minimum amounts with slippage', () => {
-      const amount0 = 1000000n;
-      const amount1 = 2000000n;
+    it('should calculate minimum amounts with default slippage', () => {
+      // Use realistic amounts based on mock data
+      const amount0 = BigInt('1' + '0'.repeat(MockTokens.WETH.decimals)); // 1 WETH
+      const amount1 = BigInt(Math.floor(MockPool.prices.current * 1e6)); // Current price in USDC
 
       const minAmounts = calculateMinimumAmounts(amount0, amount1);
 
-      // * Verify slippage calculations
-      expect(minAmounts.amount0Min).toBeLessThan(amount0);
-      expect(minAmounts.amount1Min).toBeLessThan(amount1);
-      expect(minAmounts.amount0Min).toBeGreaterThan(0n);
-      expect(minAmounts.amount1Min).toBeGreaterThan(0n);
+      // Default slippage is 0.5% (0.005), so minimum amounts should be 99.5% of input
+      const expectedMin0 = (amount0 * 995n) / 1000n;
+      const expectedMin1 = (amount1 * 995n) / 1000n;
+
+      expect(minAmounts.amount0Min).toBe(expectedMin0);
+      expect(minAmounts.amount1Min).toBe(expectedMin1);
     });
 
     it('should respect custom slippage tolerance', () => {
-      const amount = 1000000n;
+      // Use realistic amounts from mock data
+      const amount0 = BigInt('1' + '0'.repeat(MockTokens.WETH.decimals)); // 1 WETH
+      const amount1 = BigInt(Math.floor(MockPool.prices.current * 1e6)); // Current price in USDC
       const customSlippage = 0.01; // 1%
 
       const minAmounts = calculateMinimumAmounts(
-        amount,
-        amount,
+        amount0,
+        amount1,
         customSlippage,
       );
-      const expectedMin = (amount * 99n) / 100n; // 1% less
 
-      expect(minAmounts.amount0Min).toBe(expectedMin);
-      expect(minAmounts.amount1Min).toBe(expectedMin);
+      // With 1% slippage, minimum amounts should be 99% of input
+      const expectedMin0 = (amount0 * 99n) / 100n;
+      const expectedMin1 = (amount1 * 99n) / 100n;
+
+      expect(minAmounts.amount0Min).toBe(expectedMin0);
+      expect(minAmounts.amount1Min).toBe(expectedMin1);
     });
   });
 });
