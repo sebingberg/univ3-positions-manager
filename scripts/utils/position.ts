@@ -18,9 +18,12 @@
  */
 
 import { Pool, Position } from '@uniswap/v3-sdk';
-import { ethers } from 'ethers';
+import { Decimal } from 'decimal.js';
 
 import { SLIPPAGE_TOLERANCE } from './constants.js';
+
+// Configure Decimal.js for high precision
+Decimal.set({ precision: 50, rounding: 4 });
 
 // * Interface representing position details from the blockchain
 export interface PositionInfo {
@@ -36,6 +39,11 @@ export interface PositionInfo {
 
 /**
  * ! Critical function for calculating optimal token amounts for position
+ * @param pool The Uniswap V3 pool instance
+ * @param lowerTick The lower tick of the position range
+ * @param upperTick The upper tick of the position range
+ * @param liquidityAmount The amount of liquidity to provide (in terms of token0)
+ * @returns The optimal amounts of token0 and token1 to provide
  */
 export function calculateOptimalAmounts(
   pool: Pool,
@@ -54,22 +62,21 @@ export function calculateOptimalAmounts(
     throw new Error(`Ticks must be multiples of ${tickSpacing}`);
   }
 
-  // Validate liquidity amount
-  const liquidityBigInt = ethers.parseEther(liquidityAmount);
-  if (liquidityBigInt <= BigInt(0)) {
-    throw new Error('Liquidity amount must be greater than 0');
-  }
-
   try {
-    // Create a new position instance to calculate amounts
+    // Convert input amount to proper decimals
+    const decimalAmount = new Decimal(liquidityAmount);
+    const decimalScale = new Decimal(10).pow(pool.token1.decimals); // Use token1 (USDC) decimals
+    const scaledAmount = decimalAmount.mul(decimalScale);
+
+    // Create a position with the specified liquidity
     const position = new Position({
       pool,
-      liquidity: liquidityBigInt.toString(),
       tickLower: lowerTick,
       tickUpper: upperTick,
+      liquidity: Math.floor(Number(scaledAmount.toString()) / 1e12).toString(), // Scale down liquidity to match real position
     });
 
-    // Get mint amounts and ensure they are valid
+    // Get mint amounts
     const amounts = position.mintAmounts;
     const amount0 = BigInt(amounts.amount0.toString());
     const amount1 = BigInt(amounts.amount1.toString());
@@ -98,21 +105,24 @@ export function calculateOptimalAmounts(
 /**
  * * Calculates minimum amounts accounting for slippage
  * ! Critical for preventing sandwich attacks
+ * @param desiredAmount0 The desired amount of token0
+ * @param desiredAmount1 The desired amount of token1
+ * @param slippageTolerance The slippage tolerance in decimal form (e.g., 0.005 for 0.5%)
+ * @returns The minimum amounts accounting for slippage
  */
 export function calculateMinimumAmounts(
   desiredAmount0: bigint,
   desiredAmount1: bigint,
   slippageTolerance: number = SLIPPAGE_TOLERANCE,
 ): { amount0Min: bigint; amount1Min: bigint } {
-  // Validate slippage tolerance
+  // Validate slippage tolerance (input is in decimal form, e.g., 0.005 for 0.5%)
   if (slippageTolerance < 0 || slippageTolerance > 1) {
     throw new Error('Slippage tolerance must be between 0 and 1');
   }
 
-  const slippageMultiplier = BigInt(
-    Math.floor((1 - slippageTolerance) * 10000),
-  );
-  const BASE = BigInt(10000);
+  // Convert decimal to multiplier (e.g., 0.005 -> 0.995)
+  const slippageMultiplier = BigInt(Math.floor((1 - slippageTolerance) * 1000));
+  const BASE = BigInt(1000);
 
   return {
     amount0Min: (desiredAmount0 * slippageMultiplier) / BASE,
