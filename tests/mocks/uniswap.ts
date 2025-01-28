@@ -4,7 +4,7 @@
  */
 
 import { Token } from '@uniswap/sdk-core';
-import { Pool } from '@uniswap/v3-sdk';
+import { Pool, TickMath } from '@uniswap/v3-sdk';
 
 import { CHAIN_ID } from '../../scripts/utils/constants.js';
 
@@ -40,15 +40,19 @@ export const MockTokens = {
   ),
 } as const;
 
+// Calculate sqrtPriceX96 from tick using SDK's TickMath
+const currentTick = 166500; // Tick for ~61,840 USDC/WETH
+const sqrtPriceX96 = TickMath.getSqrtRatioAtTick(currentTick).toString();
+
 // Mock pool data from Sepolia WETH/USDC pool
 export const MockPool = {
-  // Current price ~64,348.90 USDC/WETH
+  // Current pool state from Sepolia
   slot0: {
-    sqrtPriceX96: '305852707744136481743870474612073', // Real Sepolia value
-    tick: 165178, // Real Sepolia value
-    observationIndex: 3,
-    observationCardinality: 6,
-    observationCardinalityNext: 6,
+    sqrtPriceX96, // Calculated from tick using SDK
+    tick: currentTick, // Exact Sepolia value
+    observationIndex: 421,
+    observationCardinality: 723,
+    observationCardinalityNext: 723,
     feeProtocol: 0,
     unlocked: true,
   },
@@ -57,31 +61,26 @@ export const MockPool = {
     token0: '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9', // WETH
     token1: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // USDC
     fee: 500, // 0.05% fee tier
-    tickLower: 163420, // Real position min tick
-    tickUpper: 177280, // Real position max tick
-    liquidity: '1234567890123456789', // Real-world scale liquidity
+    tickLower: 163420, // Real position from Sepolia
+    tickUpper: 170320, // Real position from Sepolia
+    liquidity: '540841577121120934', // Exact Sepolia liquidity
   },
-  // Price ranges for tests (based on real market data)
+  // Price ranges for tests (from real position)
   prices: {
-    current: 64348.9,
-    min: 20008.4,
-    max: 80004.5,
+    current: 61840.6, // Current Sepolia price
+    min: 40009.5, // Real min price
+    max: 80004.5, // Real max price
   },
   // Pool instance for SDK operations
   instance: new Pool(
     MockTokens.WETH,
     MockTokens.USDC,
     500, // 0.05% fee tier
-    '305852707744136481743870474612073', // Real sqrtPriceX96
-    '1234567890123456789', // Real liquidity
-    165178, // Real tick
+    sqrtPriceX96,
+    '540841577121120934', // Exact Sepolia liquidity
+    currentTick,
   ),
-  // Common test values based on real market data
-  testPrices: {
-    WBTC_USDC: 64348.9, // Using same price as ETH for now
-    USDT_USDC: 1.0,
-  },
-  liquidity: '1234567890123456789',
+  liquidity: '540841577121120934', // Exact Sepolia liquidity
 };
 
 // Mock fee tiers (standard Uniswap V3 values)
