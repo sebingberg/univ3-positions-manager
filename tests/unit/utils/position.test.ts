@@ -30,31 +30,6 @@ describe('Position Utilities [scripts/utils/position.ts]', () => {
       expect(amounts.amount0).toBeGreaterThan(0n);
       expect(amounts.amount1).toBeGreaterThan(0n);
 
-      // Get expected amounts from real position data
-      const baseEth = BigInt('1' + '0'.repeat(15)); // ~0.001 ETH
-      const baseUsdc = BigInt(3_000_000); // 3.00 USDC = 3 * 10^6 (USDC has 6 decimals)
-
-      // Log the actual amounts for debugging
-      console.log('Test amounts:', {
-        amount0: amounts.amount0.toString(),
-        amount1: amounts.amount1.toString(),
-        baseEth: baseEth.toString(),
-        baseUsdc: baseUsdc.toString(),
-        baseEthBounds: (baseEth * 2n).toString(),
-        baseUsdcBounds: (baseUsdc * 2n).toString(),
-        currentPrice: MockPool.prices.current,
-        priceRange: {
-          min: 40009.5,
-          max: 80004.5,
-          current: 61840.6,
-        },
-        tickRange: {
-          lower: lowerTick,
-          upper: upperTick,
-          current: MockPool.slot0.tick,
-        },
-      });
-
       // For concentrated liquidity positions, amounts can vary based on price
       // Using wider bounds since actual amounts depend on current price vs range
       expect(amounts.amount0).toBeGreaterThan(0n);
