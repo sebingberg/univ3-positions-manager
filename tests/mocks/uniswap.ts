@@ -81,6 +81,12 @@ export const MockPool = {
     currentTick,
   ),
   liquidity: '540841577121120934', // Exact Sepolia liquidity
+
+  // Add test prices for different token pairs
+  testPrices: {
+    WBTC_USDC: 43250.75, // Example BTC/USDC price
+    USDT_USDC: 1.0001, // Example USDT/USDC price
+  },
 };
 
 // Mock fee tiers (standard Uniswap V3 values)
